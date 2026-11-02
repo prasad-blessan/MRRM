@@ -1,0 +1,25 @@
+# Requirements contain client information; kept out of source control.
+req/
+
+# Secrets and local data
+.env
+.env.*
+!.env.example
+.dev-mail/
+
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+~$*

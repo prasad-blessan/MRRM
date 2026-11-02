@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationType {
+  CLIENT
+  AGENCY
+}
+
+// REG-02 / REG-03: registration lifecycle; only ACTIVE organizations can log in.
+enum OrganizationStatus {
+  PENDING_VERIFICATION
+  PENDING_APPROVAL
+  ACTIVE
+  REJECTED
+  DEACTIVATED
+}
+
+// PRD 5.1 user types.
+enum UserRole {
+  CLIENT_USER
+  LS_ADMIN
+  LS_USER
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DEACTIVATED
+}
+
+enum EmailTokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+model Organization {
+  id              String             @id @default(uuid()) @db.Uuid
+  name            String
+  type            OrganizationType
+  status          OrganizationStatus @default(PENDING_VERIFICATION)
+  address         String?
+  timezone        String?
+  // ADM-08 approval checklist.
+  baaSigned       Boolean?           @map("baa_signed")
+  msaReference    String?            @map("msa_reference")
+  submittedAt     DateTime?          @map("submitted_at") @db.Timestamptz(3)
+  decidedAt       DateTime?          @map("decided_at") @db.Timestamptz(3)
+  decidedById     String?            @map("decided_by_id") @db.Uuid
+  rejectionReason String?            @map("rejection_reason")
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  users           User[]
+
+  @@index([status])
+  @@map("organizations")
+}
+
+model User {
+  id               String            @id @default(uuid()) @db.Uuid
+  // Null for LevelShift staff (LS_ADMIN, LS_USER).
+  organizationId   String?           @map("organization_id") @db.Uuid
+  organization     Organization?     @relation(fields: [organizationId], references: [id])
+  // Always stored lower-case (REG-07: emails are unique case-insensitively).
+  email            String            @unique
+  fullName         String            @map("full_name")
+  phone            String?
+  emailVerifiedAt  DateTime?         @map("email_verified_at") @db.Timestamptz(3)
+  // CMP-12: accepted privacy notice / terms version.
+  termsVersion     String?           @map("terms_version")
+  termsAcceptedAt  DateTime?         @map("terms_accepted_at") @db.Timestamptz(3)
+  passwordHash     String?           @map("password_hash")
+  role             UserRole
+  status           UserStatus        @default(INVITED)
+  // REG-06 / REG-10: consecutive password + OTP failures.
+  failedLoginCount Int               @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?         @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt      DateTime?         @map("last_login_at") @db.Timestamptz(3)
+  timezone         String?
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  sessions         Session[]
+  loginChallenges  LoginChallenge[]
+  emailTokens      EmailToken[]
+  passwordHistory  PasswordHistory[]
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+// REG-02 / REG-05 / REG-08: single-use, expiring email links. Only the hash is stored.
+model EmailToken {
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
+  user      User              @relation(fields: [userId], references: [id])
+  purpose   EmailTokenPurpose
+  tokenHash String            @unique @map("token_hash")
+  expiresAt DateTime          @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?         @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, purpose])
+  @@map("email_tokens")
+}
+
+// REG-09: previous password hashes to block reuse of the last N passwords.
+model PasswordHistory {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@map("password_history")
+}
+
+// REG-04 / REG-10: one-time code issued after a correct password.
+model LoginChallenge {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  user       User      @relation(fields: [userId], references: [id])
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  attempts   Int       @default(0)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("login_challenges")
+}
+
+// REG-11 / SEC-10: server-side sessions with idle and absolute expiry.
+model Session {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  user              User      @relation(fields: [userId], references: [id])
+  tokenHash         String    @unique @map("token_hash")
+  ip                String?
+  userAgent         String?   @map("user_agent")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt        DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  idleExpiresAt     DateTime  @map("idle_expires_at") @db.Timestamptz(3)
+  absoluteExpiresAt DateTime  @map("absolute_expires_at") @db.Timestamptz(3)
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// SEC-02: append-only audit trail. No PHI/PII, file names or content.
+model AuditLog {
+  id             BigInt   @id @default(autoincrement())
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  organizationId String?  @map("organization_id") @db.Uuid
+  event          String
+  objectId       String?  @map("object_id")
+  outcome        String
+  ip             String?
+
+  @@index([occurredAt])
+  @@index([event])
+  @@index([actorUserId])
+  @@map("audit_logs")
+}
