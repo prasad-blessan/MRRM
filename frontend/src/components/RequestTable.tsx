@@ -115,14 +115,14 @@ export function RequestTableCard(props: Props) {
         </Alert>
       ) : (
         <TableContainer className="rt-container">
-          <Table aria-labelledby={headingId} className="rt-table">
+          <Table aria-labelledby={headingId} className="rt-table" data-cols={columns.length}>
             <TableHead>
               <TableRow>
                 {columns.map((c) => {
                   const active = c.sort === sort
                   const Arrow = !active ? UnfoldMore : order === 'asc' ? ArrowUpward : ArrowDownward
                   return (
-                    <TableCell key={c.key} aria-sort={active ? (order === 'asc' ? 'ascending' : 'descending') : undefined}>
+                    <TableCell key={c.key} data-col={c.key} aria-sort={active ? (order === 'asc' ? 'ascending' : 'descending') : undefined}>
                       {c.sort ? (
                         <ButtonBase onClick={() => props.onSort(c.sort!)} className={cx('rt-sort', active && 'rt-sort--active')}>
                           {c.label}
@@ -141,7 +141,7 @@ export function RequestTableCard(props: Props) {
                 ? [0, 1, 2, 3].map((i) => (
                     <TableRow key={i}>
                       {columns.map((c) => (
-                        <TableCell key={c.key}>
+                        <TableCell key={c.key} data-col={c.key}>
                           <Skeleton width="70%" />
                         </TableCell>
                       ))}
@@ -150,7 +150,7 @@ export function RequestTableCard(props: Props) {
                 : rows.map((row) => (
                     <TableRow key={row.id} hover>
                       {columns.map((c) => (
-                        <TableCell key={c.key}>{c.render(row)}</TableCell>
+                        <TableCell key={c.key} data-col={c.key}>{c.render(row)}</TableCell>
                       ))}
                     </TableRow>
                   ))}

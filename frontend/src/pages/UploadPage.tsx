@@ -315,10 +315,7 @@ function Submitted({ request, onAnother }: { request: { id: string; expectedAt: 
         {request.files} {request.files === 1 ? 'file was' : 'files were'} received. Expected completion: {formatDateTime(request.expectedAt)}.
       </Typography>
       <div className="upload-done__actions">
-        <Button component={RouterLink} to={`/workflow?request=${request.id}`} variant="contained" size="large" className="btn-primary-lg">
-          Track progress
-        </Button>
-        <Button component={RouterLink} to="/dashboard" variant="outlined" size="large" className="btn-secondary-lg">
+        <Button component={RouterLink} to="/dashboard" variant="contained" size="large" className="btn-primary-lg">
           Go to Dashboard
         </Button>
         <Button onClick={onAnother} variant="outlined" size="large" className="btn-secondary-lg">

@@ -116,7 +116,8 @@ function useSort(initial: RequestSort) {
   return [sort, toggle] as const
 }
 
-function RowMenu({ row, onCancel }: { row: RequestRow; onCancel?: (row: RequestRow) => void }) {
+// showDetails: off where the row's own button already opens the same page (Recent Requests).
+function RowMenu({ row, onCancel, showDetails = true }: { row: RequestRow; onCancel?: (row: RequestRow) => void; showDetails?: boolean }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null)
   return (
     <>
@@ -124,9 +125,11 @@ function RowMenu({ row, onCancel }: { row: RequestRow; onCancel?: (row: RequestR
         <MoreVert />
       </IconButton>
       <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)} className="dash-menu">
-        <MenuItem component={RouterLink} to={`/workflow?request=${row.id}`}>
-          View details
-        </MenuItem>
+        {showDetails && (
+          <MenuItem component={RouterLink} to={`/workflow?request=${row.id}`}>
+            View details
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             setAnchor(null)
@@ -402,7 +405,7 @@ function Actions({ row, onCancel }: { row: RequestRow; onCancel?: (row: RequestR
       <Button component={RouterLink} to={action.to} variant="outlined" aria-label={`${action.label} for ${row.id}`} className="btn-sm dash-action">
         {action.label}
       </Button>
-      <RowMenu row={row} onCancel={onCancel} />
+      <RowMenu row={row} onCancel={onCancel} showDetails={false} />
     </div>
   )
 }

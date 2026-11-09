@@ -263,6 +263,8 @@ function ReviewDialog({
             </Button>
             <Button
               variant="contained"
+              size="large"
+              className="btn-primary-lg"
               disabled={!canApprove || busy}
               onClick={() =>
                 run(

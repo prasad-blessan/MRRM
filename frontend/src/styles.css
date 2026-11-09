@@ -49,13 +49,13 @@
     --color-adornment: var(--color-text-muted);
 
     /* Surfaces and lines */
-    --color-bg: #f4f8fd;
-    --color-bg-grad: linear-gradient(180deg, #eef5fe 0%, #f6f9fd 100%);
+    --color-bg: #fff;
+    --color-bg-grad: linear-gradient(180deg, #fff 0%, #f6f9fd 100%);
     --color-bg-auth: #ffffff;
     --color-surface: #ffffff;
     --color-surface-muted: #f3f6fb;    /* table header */
     --color-row-hover: #f8fbff;
-    --color-border: #e3e8f2;           /* card and table lines */
+    --color-border: #d5dce9;           /* card and table lines */
     --color-border-input: #cfd6e6;     /* inputs, outlined controls */
     --color-divider: #e3e8f2;
 
@@ -662,6 +662,18 @@
      Sizes follow the prototype sign-in page (req/MRRM-prototype, "Login"): px tokens from styles.css. */
   /* ---------------------------------------------------------- public layout */
   /* Split layout for every signed-out screen: brand panel left (desktop, 1.25fr), white form column right (1fr). */
+  /* Desktop: the layout is held to a max width and centred instead of full width. */
+  .public-page {
+    min-height: 100vh;
+    background: var(--color-bg-auth);
+
+    @media (width >= 1200px) {
+      display: flex;
+      justify-content: center;
+      background: var(--color-bg);
+    }
+  }
+
   .public-layout {
     --fs: 1;
     display: grid;
@@ -672,6 +684,8 @@
 
     @media (width >= 1200px) {
       grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      width: 100%;
+      max-width: 1600px;
     }
   }
 
@@ -768,7 +782,9 @@
     display: none;
     flex-direction: column;
     overflow: hidden;
-    padding: 64px 72px 40px;
+    padding: 30px 72px 40px;
+    /* The illustration shows only when the panel itself is wide enough (it sits in a framed page). */
+    container-type: inline-size;
 
     @media (width >= 1200px) {
       display: flex;
@@ -891,7 +907,7 @@
     top: calc(46% - 157px);
     display: none;
 
-    @media (width >= 1440px) {
+    @container (width >= 650px) {
       display: block;
     }
   }
@@ -1774,6 +1790,36 @@
     & .MuiTableRow-root:last-of-type .MuiTableCell-body {
       border-bottom: 0;
     }
+
+    /* Column widths: data columns share the width equally, Services a little wider, Documents (a count) narrower;
+       Action keeps its content width at the right edge. */
+    & [data-col] {
+      width: var(--rt-col);
+    }
+
+    & [data-col='service'] {
+      width: var(--rt-service);
+    }
+
+    & [data-col='docs'] {
+      width: var(--rt-docs);
+    }
+
+    & [data-col='action'] {
+      width: 1%;
+    }
+
+    &[data-cols='7'] {
+      --rt-col: 16%;
+      --rt-service: 26%;
+      --rt-docs: 9%;
+    }
+
+    &[data-cols='6'] {
+      --rt-col: 20%;
+      --rt-service: 30%;
+      --rt-docs: 10%;
+    }
   }
 
   .rt-sort {
@@ -2249,11 +2295,10 @@
     background: currentColor;
   }
 
-  /* Services wrap like the prototype's td.wrap, at most two lines; 120-160px so the table fits at 1440px. */
+  /* Services wrap like the prototype's td.wrap, at most two lines; the column takes the table's spare width. */
   .dash-service {
     display: -webkit-box;
     min-width: 120px;
-    max-width: 160px;
     overflow: hidden;
     white-space: normal;
     -webkit-box-orient: vertical;
@@ -2735,6 +2780,436 @@
     justify-content: center;
     gap: 12px;
     margin-top: 24px;
+  }
+
+  /* ---- Workflow Monitor (req/Workflow Monitor.png, prototype workflow-monitor.html) ---------------------- */
+  /* Stage colours come from data-state: completed (green), active (blue), pending (grey). */
+  .wf-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+
+    .page-header {
+      margin-bottom: 0;
+    }
+  }
+
+  .wf-head__tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .wf-picker {
+    min-width: 200px;
+  }
+
+  .wf-refresh.MuiPaper-root {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 16px 4px 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+  }
+
+  .wf-refresh__btn.MuiIconButton-root {
+    color: var(--color-primary);
+
+    /* Anticlockwise (to the left). */
+    &.is-spinning svg {
+      animation: wf-spin 0.8s linear infinite reverse;
+    }
+  }
+
+  .wf-refresh__text {
+    padding-left: 10px;
+    border-left: 1px solid var(--color-divider);
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  .wf-alert.MuiAlert-root,
+  .wf-loading {
+    margin-top: 20px;
+  }
+
+  .wf-loading {
+    display: grid;
+    gap: 20px;
+  }
+
+  .wf-empty.MuiPaper-root,
+  .wf-strip.MuiPaper-root {
+    margin-top: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .wf-empty.MuiPaper-root {
+    padding: 24px;
+  }
+
+  .wf-empty__text.MuiTypography-root {
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  /* Info strip: label over value, divided cells. */
+  .wf-strip.MuiPaper-root {
+    padding: 16px 20px;
+  }
+
+  .wf-strip__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px 0;
+    margin: 0;
+
+    @media (width >= 1100px) {
+      display: flex;
+    }
+  }
+
+  .wf-strip__cell {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 20px;
+    border-left: 1px solid var(--color-divider);
+
+    &:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
+  }
+
+  .wf-strip__cell--grow {
+    flex-grow: 2;
+  }
+
+  /* Uploaded On: room for the date and time on one line. */
+  .wf-strip__cell--wide {
+    flex-grow: 1.5;
+  }
+
+  /* Pages only shows a count. */
+  .wf-strip__cell--narrow {
+    flex-grow: 0.6;
+  }
+
+  @media (width >= 1500px) {
+    .wf-strip__cell:not(.wf-strip__cell--grow) .wf-strip__value {
+      white-space: nowrap;
+    }
+  }
+
+  @media (width < 1100px) {
+    .wf-strip__cell {
+      padding: 0 12px 0 0;
+      border-left: 0;
+    }
+  }
+
+  .wf-strip__label {
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  .wf-strip__value {
+    margin: 4px 0 0;
+    font-size: calc(var(--type-lead) * var(--fs, 1));
+    font-weight: var(--weight-bold);
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+
+  /* Stepper: circles joined by a line; the line after a completed step is green. */
+  .wf-stepper {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .wf-step {
+    --wf-color: #8a8fa6;
+    --wf-line: var(--color-border);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+
+    &[data-state='completed'] {
+      --wf-color: var(--color-success);
+      --wf-line: var(--color-success);
+    }
+
+    &[data-state='active'] {
+      --wf-color: var(--color-primary);
+    }
+
+    /* Connector to the next step, drawn behind the circles. */
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      width: 100%;
+      height: 3px;
+      background: var(--wf-line);
+    }
+  }
+
+  .wf-step__circle {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 10px;
+    border-radius: 50%;
+    background: var(--wf-color);
+    font-size: 22px;
+    font-weight: var(--weight-bold);
+    color: #fff;
+
+    svg {
+      font-size: 28px;
+    }
+  }
+
+  .wf-step__title {
+    font-size: calc(var(--type-lead) * var(--fs, 1));
+    font-weight: var(--weight-bold);
+    color: var(--color-ink);
+  }
+
+  .wf-step__state {
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-medium);
+    color: var(--wf-color);
+  }
+
+  .wf-step__time {
+    font-size: calc(var(--type-xs) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  /* Stage cards with chevrons between them. */
+  .wf-stages {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .wf-stages__item {
+    position: relative;
+    display: flex;
+  }
+
+  .wf-stages__chevron.MuiSvgIcon-root {
+    position: absolute;
+    top: 50%;
+    left: -12px;
+    translate: -50% -50%;
+    font-size: 20px;
+    color: var(--color-text-muted);
+  }
+
+  .wf-stage.MuiPaper-root {
+    --wf-color: #8a8fa6;
+    --wf-soft: var(--color-neutral-soft);
+    --wf-track: #e2e4ec;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 16px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    text-align: center;
+
+    &[data-state='completed'] {
+      --wf-color: var(--color-success);
+      --wf-soft: var(--color-success-soft);
+      border-color: var(--color-success-100);
+      background: linear-gradient(180deg, #f2fbf6, var(--color-surface));
+    }
+
+    &[data-state='active'] {
+      --wf-color: var(--color-primary);
+      --wf-soft: var(--color-primary-soft);
+      border-color: var(--color-primary-100);
+      background: linear-gradient(180deg, #f1f7ff, var(--color-surface));
+      box-shadow: 0 0 0 1px var(--color-primary-100), var(--shadow-card);
+    }
+  }
+
+  .wf-stage__icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--wf-soft);
+    color: var(--wf-color);
+
+    svg {
+      font-size: 28px;
+    }
+  }
+
+  .wf-stage__title.MuiTypography-root {
+    margin-top: 12px;
+    font-size: calc(var(--type-lead) * var(--fs, 1));
+    font-weight: var(--weight-bold);
+    color: var(--color-ink);
+  }
+
+  .wf-stage__text.MuiTypography-root {
+    flex: 1;
+    margin-top: 6px;
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    text-align: left;
+    align-self: stretch;
+  }
+
+  .wf-stage__progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    align-self: stretch;
+    margin-top: 14px;
+  }
+
+  .wf-stage__bar {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    height: 8px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: var(--wf-track);
+    appearance: none;
+    overflow: hidden;
+
+    &::-webkit-progress-bar {
+      border-radius: var(--radius-pill);
+      background: var(--wf-track);
+    }
+
+    &::-webkit-progress-value {
+      border-radius: var(--radius-pill);
+      background: var(--wf-color);
+    }
+
+    &::-moz-progress-bar {
+      border-radius: var(--radius-pill);
+      background: var(--wf-color);
+    }
+  }
+
+  .wf-stage__percent {
+    min-width: 36px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    color: var(--wf-color);
+    text-align: right;
+  }
+
+  .wf-stage__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    align-self: stretch;
+    margin-top: 14px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--wf-soft);
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-medium);
+    color: var(--wf-color);
+
+    svg {
+      font-size: 20px;
+    }
+
+    .wf-stage__spin {
+      animation: wf-spin 1.2s linear infinite reverse; /* anticlockwise, like the refresh icon */
+    }
+  }
+
+  /* All stages done. */
+  .wf-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 14px 18px;
+    border: 1px solid var(--color-success-100);
+    border-radius: var(--radius-lg);
+    background: var(--color-success-soft);
+  }
+
+  .wf-banner__msg {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-semibold);
+    color: var(--color-success);
+  }
+
+  /* Narrow screens: stack the stages vertically; the stepper keeps circles only. */
+  @media (width < 1100px) {
+    .wf-stages {
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .wf-stages__chevron.MuiSvgIcon-root {
+      display: none;
+    }
+  }
+
+  @media (width < 700px) {
+    .wf-step__title,
+    .wf-step__state,
+    .wf-step__time {
+      display: none;
+    }
+
+    .wf-step__circle {
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+    }
+
+    .wf-step:not(:last-child)::after {
+      top: 19px;
+    }
+  }
+
+  @keyframes wf-spin {
+    to {
+      rotate: 360deg;
+    }
   }
 }
 

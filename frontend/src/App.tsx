@@ -10,9 +10,9 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { UploadPage } from './pages/UploadPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
+import { WorkflowMonitorPage } from './pages/WorkflowMonitorPage'
 
 const SOON = [
-  ['/workflow', 'Workflow Monitor'],
   ['/records', 'Records'],
   ['/outputs', 'Final Outputs'],
   ['/settings', 'Settings'],
@@ -43,6 +43,14 @@ export default function App() {
         element={
           <RequireAuth roles={['CLIENT_USER']}>
             <UploadPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/workflow"
+        element={
+          <RequireAuth>
+            <WorkflowMonitorPage />
           </RequireAuth>
         }
       />

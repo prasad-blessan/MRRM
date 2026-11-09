@@ -153,3 +153,40 @@ export async function downloadRequest(code: string): Promise<void> {
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+// ---- TRK-01..TRK-04: request detail for the Workflow Monitor ----
+
+export type StageState = 'completed' | 'active' | 'pending'
+
+export interface WorkflowStage {
+  name: string
+  state: StageState
+  progress: number
+  completedAt: string | null
+}
+
+export interface RequestDocument {
+  id: string
+  fileName: string
+  mimeType: string
+  sizeBytes: number
+  pages: number
+  outputReady: boolean
+}
+
+export interface RequestDetail {
+  id: string
+  service: string
+  status: RequestStatus
+  receivedAt: string
+  expectedAt: string
+  deliveredAt: string | null
+  completedAt: string | null
+  updatedAt: string
+  cancellable: boolean
+  pages: number
+  documents: RequestDocument[]
+  stages: WorkflowStage[]
+}
+
+export const getRequest = (code: string) => api<RequestDetail>(`/requests/${encodeURIComponent(code)}`)
