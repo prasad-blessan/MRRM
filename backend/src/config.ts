@@ -33,9 +33,23 @@ const schema = z
     PASSWORD_HISTORY_COUNT: z.coerce.number().int().nonnegative().default(5),
     // CMP-12: version of the privacy notice / terms shown at registration.
     TERMS_VERSION: z.string().default('2026-11-draft'),
+
+    // SUB-04: uploaded files live outside the web root; relative paths resolve from backend/.
+    STORAGE_DIR: z.string().default('storage'),
+    MAX_UPLOAD_MB: z.coerce.number().int().positive().default(100),
+    // Development only: advances requests through the workflow and writes synthetic output.
+    SIMULATE_WORKFLOW: z.stringbool().default(false),
+    // Development only: deleting files/<request ID>/ by hand removes that request. Unset = on outside production.
+    SYNC_STORAGE_DELETES: z.stringbool().optional(),
   })
   .refine((c) => c.NODE_ENV !== 'production' || c.MAIL_TRANSPORT === 'smtp', {
     message: 'MAIL_TRANSPORT=console is not allowed in production',
+  })
+  .refine((c) => c.NODE_ENV !== 'production' || !c.SIMULATE_WORKFLOW, {
+    message: 'SIMULATE_WORKFLOW is not allowed in production',
+  })
+  .refine((c) => c.NODE_ENV !== 'production' || !c.SYNC_STORAGE_DELETES, {
+    message: 'SYNC_STORAGE_DELETES is not allowed in production',
   });
 
 const parsed = schema.safeParse(process.env);

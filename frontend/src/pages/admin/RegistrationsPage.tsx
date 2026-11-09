@@ -1,7 +1,6 @@
 import WarningAmber from '@mui/icons-material/WarningAmber'
 import {
   Alert,
-  Box,
   Button,
   Chip,
   CircularProgress,
@@ -15,7 +14,6 @@ import {
   RadioGroup,
   FormControl,
   FormLabel,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -62,15 +60,15 @@ export function RegistrationsPage() {
   }
 
   return (
-    <Stack spacing={3}>
-      <Box>
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 700 }}>
+    <div className="admin-reg">
+      <div>
+        <Typography component="h1" variant="h5" className="admin-reg-title">
           Registrations waiting for approval
         </Typography>
-        <Typography color="text.secondary">
+        <Typography color="textSecondary">
           Approve only after the BAA is signed and the MSA reference is recorded.
         </Typography>
-      </Box>
+      </div>
 
       {notice && (
         <Alert severity="success" onClose={() => setNotice(null)}>
@@ -86,8 +84,8 @@ export function RegistrationsPage() {
       {items === null && !error ? (
         <CircularProgress aria-label="Loading registrations" />
       ) : items && items.length === 0 ? (
-        <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
-          <Typography color="text.secondary">No registrations are waiting for approval.</Typography>
+        <Paper variant="outlined" className="admin-reg-empty">
+          <Typography color="textSecondary">No registrations are waiting for approval.</Typography>
         </Paper>
       ) : (
         items && (
@@ -106,7 +104,7 @@ export function RegistrationsPage() {
                 {items.map((r) => (
                   <TableRow key={r.id} hover>
                     <TableCell>
-                      <Stack spacing={0.5}>
+                      <div className="admin-reg-org">
                         <span>{r.organizationName}</span>
                         {r.duplicates.length > 0 && (
                           <Chip
@@ -115,21 +113,21 @@ export function RegistrationsPage() {
                             color="warning"
                             size="small"
                             variant="outlined"
-                            sx={{ alignSelf: 'flex-start' }}
+                            className="admin-reg-duplicate"
                           />
                         )}
-                      </Stack>
+                      </div>
                     </TableCell>
                     <TableCell>{typeLabel(r.organizationType)}</TableCell>
                     <TableCell>
                       {r.contact?.name}
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="textSecondary">
                         {r.contact?.email}
                       </Typography>
                     </TableCell>
                     <TableCell>{formatDate(r.submittedAt)}</TableCell>
                     <TableCell align="right">
-                      <Button variant="outlined" onClick={() => setSelected(r)}>
+                      <Button variant="outlined" onClick={() => setSelected(r)} className="btn-sm">
                         Review
                       </Button>
                     </TableCell>
@@ -144,7 +142,7 @@ export function RegistrationsPage() {
       {selected && (
         <ReviewDialog registration={selected} onClose={() => setSelected(null)} onDecided={decided} />
       )}
-    </Stack>
+    </div>
   )
 }
 
@@ -183,10 +181,10 @@ function ReviewDialog({
     <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="sm" aria-labelledby="review-title">
       <DialogTitle id="review-title">{mode === 'review' ? 'Review registration' : 'Reject registration'}</DialogTitle>
       <DialogContent dividers>
-        <Stack spacing={2.5}>
+        <div className="admin-reg-review">
           {error && <Alert severity="error">{error}</Alert>}
 
-          <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: 2, rowGap: 1 }}>
+          <dl className="admin-reg-details">
             {[
               ['Organization', r.organizationName],
               ['Type', typeLabel(r.organizationType)],
@@ -196,16 +194,16 @@ function ReviewDialog({
               ['Phone', r.contact?.phone ?? '—'],
               ['Submitted', formatDate(r.submittedAt)],
             ].map(([label, value]) => (
-              <Box key={label} sx={{ display: 'contents' }}>
-                <Typography component="dt" variant="body2" color="text.secondary">
+              <div key={label} className="admin-reg-details__row">
+                <Typography component="dt" variant="body2" color="textSecondary">
                   {label}
                 </Typography>
-                <Typography component="dd" variant="body2" sx={{ m: 0, whiteSpace: 'pre-line' }}>
+                <Typography component="dd" variant="body2" className="admin-reg-details__value">
                   {value}
                 </Typography>
-              </Box>
+              </div>
             ))}
-          </Box>
+          </dl>
 
           {r.duplicates.length > 0 && (
             <Alert severity="warning">
@@ -252,12 +250,12 @@ function ReviewDialog({
               slotProps={{ htmlInput: { maxLength: 1000 } }}
             />
           )}
-        </Stack>
+        </div>
       </DialogContent>
       <DialogActions>
         {mode === 'review' ? (
           <>
-            <Button color="error" onClick={() => setMode('reject')} disabled={busy} sx={{ mr: 'auto' }}>
+            <Button color="error" onClick={() => setMode('reject')} disabled={busy} className="admin-reg-push">
               Reject…
             </Button>
             <Button onClick={onClose} disabled={busy}>
@@ -278,7 +276,7 @@ function ReviewDialog({
           </>
         ) : (
           <>
-            <Button onClick={() => setMode('review')} disabled={busy} sx={{ mr: 'auto' }}>
+            <Button onClick={() => setMode('review')} disabled={busy} className="admin-reg-push">
               Back
             </Button>
             <Button

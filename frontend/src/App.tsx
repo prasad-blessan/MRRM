@@ -7,7 +7,16 @@ import { LoginPage } from './pages/LoginPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { UploadPage } from './pages/UploadPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
+import { ComingSoonPage } from './pages/ComingSoonPage'
+
+const SOON = [
+  ['/workflow', 'Workflow Monitor'],
+  ['/records', 'Records'],
+  ['/outputs', 'Final Outputs'],
+  ['/settings', 'Settings'],
+] as const
 
 export default function App() {
   return (
@@ -29,6 +38,25 @@ export default function App() {
           </RequireAuth>
         }
       />
+      <Route
+        path="/upload"
+        element={
+          <RequireAuth roles={['CLIENT_USER']}>
+            <UploadPage />
+          </RequireAuth>
+        }
+      />
+      {SOON.map(([path, title]) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <RequireAuth>
+              <ComingSoonPage title={title} />
+            </RequireAuth>
+          }
+        />
+      ))}
       <Route
         path="/admin/registrations"
         element={

@@ -6,11 +6,11 @@ import { PublicLayout } from '../components/PublicLayout'
 export function PlaceholderPage({ title }: { title: string }) {
   return (
     <PublicLayout>
-      <Paper variant="outlined" sx={{ p: { xs: 3, sm: 5 } }}>
-        <Typography component="h1" variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+      <Paper variant="outlined" className="auth-card placeholder-page">
+        <Typography component="h1" variant="h5" className="placeholder-page__title">
           {title}
         </Typography>
-        <Typography color="text.secondary" sx={{ mb: 3 }}>
+        <Typography color="textSecondary" className="placeholder-page__text">
           This page is coming soon.
         </Typography>
         <Link component={RouterLink} to="/login">

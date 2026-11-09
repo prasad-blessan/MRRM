@@ -1,21 +1,23 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import LockOutlined from '@mui/icons-material/LockOutlined'
+import MailOutlineRounded from '@mui/icons-material/MailOutlineRounded'
+import PhoneOutlined from '@mui/icons-material/PhoneOutlined'
 import {
   Alert,
-  Box,
   Button,
   Checkbox,
   FormControl,
   FormControlLabel,
   FormHelperText,
   FormLabel,
+  InputAdornment,
   Link,
   Radio,
   RadioGroup,
-  Stack,
   TextField,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Controller, useForm, useWatch, type FieldPath } from 'react-hook-form'
 import { Link as RouterLink } from 'react-router'
 import { z } from 'zod'
@@ -23,6 +25,7 @@ import { authApi } from '../api/auth'
 import { ApiError, errorMessage } from '../api/client'
 import { meetsPasswordRules } from '../auth/passwordPolicy'
 import { AuthCard } from '../components/AuthCard'
+import { FieldLabel } from '../components/FieldLabel'
 import { PasswordField } from '../components/PasswordField'
 import { PasswordRules } from '../components/PasswordRules'
 import { ResendVerification } from '../components/ResendVerification'
@@ -56,6 +59,8 @@ const FIELD_MESSAGES: Partial<Record<FieldPath<FormValues>, string>> = {
   email: 'Enter a valid email address',
   phone: 'Enter a valid phone number',
 }
+
+const adornment = (icon: ReactNode) => <InputAdornment position="start">{icon}</InputAdornment>
 
 export function RegisterPage() {
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
@@ -120,43 +125,57 @@ export function RegisterPage() {
   if (registeredEmail) {
     return (
       <AuthCard title="Check your email">
-        <Stack spacing={2.5}>
+        <div className="form-stack">
           <Alert severity="success">Your registration has been received.</Alert>
-          <Typography>
+          <Typography className="form-text">
             We sent a verification link to <strong>{registeredEmail}</strong>. Open it within 24 hours to send your
             registration to LevelShift for approval.
           </Typography>
-          <Typography color="text.secondary">
+          <Typography color="textSecondary" className="form-text">
             After LevelShift approves your organization, we will email you a sign-in link.
           </Typography>
           <ResendVerification email={registeredEmail} />
-          <Link component={RouterLink} to="/login">
+          <Link component={RouterLink} to="/login" className="form-text form-link">
             Back to sign in
           </Link>
-        </Stack>
+        </div>
       </AuthCard>
     )
   }
 
   return (
     <AuthCard
-      title="Register your organization"
+      scrolls
+      title="Register"
       subtitle="Clients and agencies register once. LevelShift reviews every registration before access is granted."
+      subtitleClassName="register-subtitle"
     >
-      <Box component="form" noValidate onSubmit={onSubmit}>
-        <Stack spacing={2.5}>
+      <form noValidate onSubmit={onSubmit}>
+        <div className="form-stack">
           {error && <Alert severity="error">{error}</Alert>}
 
-          <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700 }}>
+          <Typography component="h2" className="register-section">
             Organization
           </Typography>
-          <TextField {...field('organizationName')} label="Organization name" required fullWidth autoFocus />
+          <div>
+            <FieldLabel htmlFor="organizationName">Organization name *</FieldLabel>
+            <TextField
+              {...field('organizationName')}
+              placeholder="Enter your organization name"
+              required
+              fullWidth
+              autoFocus
+              className="field-lg"
+            />
+          </div>
           <Controller
             name="organizationType"
             control={control}
             render={({ field: radio }) => (
               <FormControl error={!!errors.organizationType} required>
-                <FormLabel id="organizationType-label">Organization type</FormLabel>
+                <FormLabel id="organizationType-label" className="register-label">
+                  Organization type
+                </FormLabel>
                 <RadioGroup
                   row
                   aria-labelledby="organizationType-label"
@@ -164,36 +183,94 @@ export function RegisterPage() {
                   value={radio.value ?? ''}
                   onChange={(e) => radio.onChange(e.target.value)}
                   onBlur={radio.onBlur}
+                  className="register-choices"
                 >
                   <FormControlLabel value="CLIENT" control={<Radio slotProps={{ input: { ref: radio.ref } }} />} label="Client" />
                   <FormControlLabel value="AGENCY" control={<Radio />} label="Agency" />
                 </RadioGroup>
-                {errors.organizationType && <FormHelperText>{errors.organizationType.message}</FormHelperText>}
+                {errors.organizationType && <FormHelperText className="register-helper">{errors.organizationType.message}</FormHelperText>}
               </FormControl>
             )}
           />
-          <TextField {...field('address')} label="Address" required fullWidth multiline minRows={2} autoComplete="street-address" />
+          <div>
+            <FieldLabel htmlFor="address">Address *</FieldLabel>
+            <TextField
+              {...field('address')}
+              placeholder="Enter the organization address"
+              required
+              fullWidth
+              multiline
+              minRows={2}
+              autoComplete="street-address"
+              className="field-lg field-lg--multiline"
+            />
+          </div>
 
-          <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700, pt: 1 }}>
+          <Typography component="h2" className="register-section register-section--spaced">
             Primary contact
           </Typography>
-          <TextField {...field('contactName')} label="Contact name" required fullWidth autoComplete="name" />
-          <TextField {...field('email')} label="Work email" type="email" required fullWidth autoComplete="email" />
-          <TextField {...field('phone')} label="Phone" type="tel" required fullWidth autoComplete="tel" />
+          <div>
+            <FieldLabel htmlFor="contactName">Contact name *</FieldLabel>
+            <TextField {...field('contactName')} placeholder="Enter the contact name" required fullWidth autoComplete="name" className="field-lg" />
+          </div>
+          <div>
+            <FieldLabel htmlFor="email">Work email *</FieldLabel>
+            <TextField
+              {...field('email')}
+              type="email"
+              placeholder="Enter your work email"
+              required
+              fullWidth
+              autoComplete="email"
+              className="field-lg"
+              slotProps={{ input: { startAdornment: adornment(<MailOutlineRounded />) } }}
+            />
+          </div>
+          <div>
+            <FieldLabel htmlFor="phone">Phone *</FieldLabel>
+            <TextField
+              {...field('phone')}
+              type="tel"
+              placeholder="+1 555 123 4567"
+              required
+              fullWidth
+              autoComplete="tel"
+              className="field-lg"
+              slotProps={{ input: { startAdornment: adornment(<PhoneOutlined />) } }}
+            />
+          </div>
 
-          <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700, pt: 1 }}>
+          <Typography component="h2" className="register-section register-section--spaced">
             Password
           </Typography>
-          <PasswordField
-            {...field('password')}
-            label="Password"
-            required
-            fullWidth
-            autoComplete="new-password"
-            slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
-          />
-          <PasswordRules id="password-rules" password={password ?? ''} />
-          <PasswordField {...field('confirmPassword')} label="Confirm password" required fullWidth autoComplete="new-password" />
+          <div>
+            <FieldLabel htmlFor="password">Password *</FieldLabel>
+            <PasswordField
+              {...field('password')}
+              placeholder="Create a password"
+              required
+              fullWidth
+              autoComplete="new-password"
+              startIcon={<LockOutlined />}
+              className="field-lg"
+              slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
+            />
+            <div className="password-rules-gap">
+              <PasswordRules id="password-rules" password={password ?? ''} />
+            </div>
+          </div>
+          <div>
+            <FieldLabel htmlFor="confirmPassword">Confirm password *</FieldLabel>
+            <PasswordField
+              {...field('confirmPassword')}
+              placeholder="Re-enter the password"
+              required
+              fullWidth
+              autoComplete="new-password"
+              startIcon={<LockOutlined />}
+              className="field-lg"
+            />
+          </div>
 
           <Controller
             name="acceptTerms"
@@ -201,16 +278,18 @@ export function RegisterPage() {
             render={({ field: box }) => (
               <FormControl error={!!errors.acceptTerms}>
                 <FormControlLabel
+                  className="register-terms"
                   control={
                     <Checkbox
                       slotProps={{ input: { ref: box.ref } }}
                       checked={!!box.value}
                       onChange={(e) => box.onChange(e.target.checked)}
                       onBlur={box.onBlur}
+                      className="register-terms__box"
                     />
                   }
                   label={
-                    <Typography variant="body2">
+                    <Typography className="register-terms__label">
                       I accept the{' '}
                       <Link component={RouterLink} to="/policies/privacy" target="_blank" rel="noopener">
                         privacy & HIPAA policy
@@ -219,7 +298,7 @@ export function RegisterPage() {
                     </Typography>
                   }
                 />
-                {errors.acceptTerms && <FormHelperText>{errors.acceptTerms.message}</FormHelperText>}
+                {errors.acceptTerms && <FormHelperText className="register-helper">{errors.acceptTerms.message}</FormHelperText>}
               </FormControl>
             )}
           />
@@ -228,17 +307,17 @@ export function RegisterPage() {
             Do not enter patient names or medical details in this form.
           </Alert>
 
-          <Button type="submit" variant="contained" size="large" fullWidth disabled={isSubmitting}>
+          <Button type="submit" variant="contained" size="large" fullWidth disabled={isSubmitting} className="btn-primary-lg">
             {isSubmitting ? 'Submitting…' : 'Submit registration'}
           </Button>
-          <Typography variant="body2" sx={{ textAlign: 'center' }}>
+          <Typography color="textSecondary" className="form-text register-signin">
             Already registered?{' '}
-            <Link component={RouterLink} to="/login">
+            <Link component={RouterLink} to="/login" className="form-link">
               Sign in
             </Link>
           </Typography>
-        </Stack>
-      </Box>
+        </div>
+      </form>
     </AuthCard>
   )
 }

@@ -1,0 +1,2772 @@
+/*
+ * MRRM common stylesheet.
+ *
+ * The single stylesheet for the app: components use class names only (no `sx` or `style` props).
+ *
+ * Cascade layers, lowest priority first:
+ *   tokens     design tokens as CSS custom properties (theme.ts maps MUI's palette to these)
+ *   reset      modern minimal reset
+ *   base       document defaults (type, links, focus, selection)
+ *   mui        MUI's own component styles (StyledEngineProvider enableCssLayer in main.tsx)
+ *   theme      app-wide overrides of MUI components
+ *   layout     page-level layout primitives
+ *   components shared components (forms, buttons, shell, tables)
+ *   pages      page-specific styles
+ *   utilities  single-purpose helpers
+ *
+ * A later layer always beats an earlier one, whatever the selector specificity. So when a rule here
+ * overrides a colour/border/shadow that MUI changes on :hover, .Mui-focused, .Mui-disabled or .Mui-error,
+ * the rule must restate that state too.
+ *
+ * Breakpoints (mobile first, same as MUI): sm 600px, md 900px, lg 1200px, xl 1536px.
+ * Sizes: text, buttons, inputs, icons and layout use the fixed px tokens below (from the MRRM prototype design system,
+ * req/MRRM-prototype/assets/styles.css). Font sizes are calc(var(--type-*) * var(--fs, 1)); --fs enlarges a screen's text.
+ */
+@layer tokens, reset, base, mui, theme, layout, components, pages, utilities;
+
+/* ============================================================ tokens */
+@layer tokens {
+  :root {
+    color-scheme: light;
+
+    /* Brand (MRRM prototype design system, req/MRRM-prototype/assets/styles.css) */
+    --color-primary: #1a6fe8;
+    --color-primary-dark: #155bc4;
+    --color-primary-soft: #eaf2fe;
+    --color-primary-100: #d6e6fd;
+    --color-primary-disabled: #9dbff3;
+    --color-brand: #1a6fe8;
+    --color-teal: #14b8a6;
+    --color-indigo: #2e1ee0;
+    --color-navy: #0d1b4c;
+    --color-navy-700: #26336b;
+    --color-ink: var(--color-navy);    /* titles, ids, strong values */
+    --color-text: #2b3252;             /* body text */
+    --color-text-muted: #5d6585;       /* secondary text, icons */
+    --color-text-subtle: var(--color-text-muted);
+    --color-placeholder: #8a91ab;
+    --color-icon: var(--color-text-muted);
+    --color-adornment: var(--color-text-muted);
+
+    /* Surfaces and lines */
+    --color-bg: #f4f8fd;
+    --color-bg-grad: linear-gradient(180deg, #eef5fe 0%, #f6f9fd 100%);
+    --color-bg-auth: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f3f6fb;    /* table header */
+    --color-row-hover: #f8fbff;
+    --color-border: #e3e8f2;           /* card and table lines */
+    --color-border-input: #cfd6e6;     /* inputs, outlined controls */
+    --color-divider: #e3e8f2;
+
+    /* Status */
+    --color-success: #0f9f6e;
+    --color-success-soft: #e6f7ef;
+    --color-success-100: #c8eedb;
+    --color-warning: #f2760f;
+    --color-warning-soft: #fff3e8;
+    --color-danger: #e0362c;
+    --color-danger-soft: #fdecea;
+    --color-info: var(--color-primary);
+    --color-info-soft: var(--color-primary-soft);
+    --color-quality: #7c3aed;
+    --color-quality-soft: #f2ecfe;
+    --color-neutral-soft: #f1f3f8;
+
+    /* Typography: one family (Inter) and one fixed px scale, the same on every page. */
+    --font-body: 'Inter Variable', 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-heading: var(--font-body);
+    --type-hero: 52px;     /* sign-in hero headline */
+    --type-auth-title: 36px; /* sign-in / register card title */
+    --type-title: 28px;    /* page titles */
+    --type-kpi: 28px;      /* stat tile values */
+    --type-heading: 18px;  /* section and panel titles */
+    --type-lead: 16px;     /* page subtitles, card values */
+    --type-input: 16px;    /* text inside inputs and selects */
+    --type-nav: 15px;      /* sidebar menu */
+    --type-body: 14px;     /* body, table cells, buttons, labels */
+    --type-caption: 13px;  /* table headers, helper text, badges */
+    --type-xs: 12px;       /* meta, notes */
+    --text-xs: var(--type-xs);
+    --text-sm: var(--type-caption);
+    --text-md: var(--type-body);
+    --text-lg: var(--type-lead);
+    --leading-tight: 1.2;
+    --leading-normal: 1.5;
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+    --weight-heavy: 800;
+
+    /* Icons */
+    --icon-nav: 20px;      /* sidebar, header */
+    --icon-md: 18px;       /* inputs, selects, toasts */
+    --icon-btn: 17px;      /* inside buttons */
+    --icon-sm: 16px;       /* inline, badges, menus */
+
+    /* Buttons */
+    --btn-radius: 8px;
+    --btn-lg-height: 48px; /* main action: Sign In, Upload & Submit */
+    --btn-lg-text: var(--type-lead);
+    --btn-md-height: 38px; /* standard / outlined action */
+    --btn-md-text: var(--type-body);
+    --btn-sm-height: 32px; /* compact */
+    --btn-sm-text: var(--type-caption);
+    --btn-sm-radius: 8px;
+
+    /* Inputs */
+    --field-height: 46px;
+    --field-radius: 8px;
+    --focus-ring: 0 0 0 3px rgb(26 111 232 / 0.14);
+
+    /* Spacing (4px base) */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+
+    /* Shape and depth */
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-pill: 999px;
+    --shadow-card: 0 1px 2px rgb(13 27 76 / 0.04), 0 4px 16px rgb(13 27 76 / 0.05);
+    --shadow-pop: 0 12px 32px rgb(13 27 76 / 0.14);
+    --shadow-button: none;
+
+    /* Layout */
+    --header-height: 64px;
+    --sidebar-width: 248px;
+    --content-max: 1600px;
+    --gutter: 32px;
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --duration-fast: 150ms;
+    --duration-base: 250ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --duration-fast: 0ms;
+      --duration-base: 0ms;
+    }
+  }
+}
+
+/* ============================================================= reset */
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  html {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+  }
+
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ============================================================== base */
+@layer base {
+  body {
+    min-height: 100dvh;
+    font-family: var(--font-body);
+    font-size: var(--text-md);
+    line-height: var(--leading-normal);
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    font-weight: var(--weight-heavy);
+    line-height: var(--leading-tight);
+    letter-spacing: -0.01em;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    text-underline-offset: 0.15em;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-primary-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ============================================================= theme */
+@layer theme {
+  .MuiTypography-h1 {
+    font-family: var(--font-heading);
+    font-weight: var(--weight-heavy);
+    letter-spacing: -0.02em;
+  }
+
+  .MuiTypography-h5 {
+    font-family: var(--font-heading);
+    font-weight: var(--weight-heavy);
+    letter-spacing: -0.01em;
+  }
+
+  .MuiButton-root {
+    text-transform: none;
+    font-weight: var(--weight-semibold);
+  }
+
+  .MuiButton-contained {
+    box-shadow: none;
+  }
+
+  .MuiButton-sizeLarge {
+    min-height: var(--btn-lg-height);
+    font-size: var(--type-lead);
+  }
+
+  .MuiLink-root {
+    font-weight: var(--weight-medium);
+  }
+
+  .MuiOutlinedInput-root {
+    background-color: var(--color-surface);
+
+    & .MuiOutlinedInput-notchedOutline {
+      border-color: var(--color-border-input);
+    }
+
+    &:hover:not(.Mui-disabled, .Mui-focused, .Mui-error) .MuiOutlinedInput-notchedOutline {
+      border-color: var(--color-primary);
+    }
+
+    &.Mui-focused .MuiOutlinedInput-notchedOutline {
+      border-width: 1px;
+      border-color: var(--color-primary);
+    }
+
+    &.Mui-error .MuiOutlinedInput-notchedOutline {
+      border-color: var(--mui-palette-error-main);
+    }
+  }
+
+  .MuiOutlinedInput-input {
+    padding-block: 13px;
+
+    /* Keep autofilled fields white instead of the browser's blue tint. */
+    &:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+      -webkit-text-fill-color: var(--color-text);
+      caret-color: var(--color-text);
+    }
+  }
+
+  .MuiInputAdornment-root {
+    color: var(--color-adornment);
+  }
+}
+
+/* ============================================================ layout */
+@layer layout {
+
+  .container {
+    width: min(100% - 2 * var(--gutter), var(--content-max));
+    margin-inline: auto;
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--stack-gap, var(--space-4));
+  }
+
+  .cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--cluster-gap, var(--space-3));
+  }
+
+  .grid-auto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min, 16rem), 100%), 1fr));
+    gap: var(--grid-gap, var(--space-6));
+  }
+}
+
+/* ======================================================== components */
+@layer components {
+  /* Form field (prototype .field input): 46px tall, 16px text, 8px corners, 18px icons. <TextField className="field-lg">. */
+  .field-lg {
+    & .MuiOutlinedInput-root {
+      height: var(--field-height);
+      padding-inline: 14px 12px;
+      border-radius: var(--field-radius);
+      font-size: calc(var(--type-input) * var(--fs, 1));
+      color: var(--color-text);
+      background-color: var(--color-surface);
+      transition: box-shadow var(--duration-fast);
+
+      &.Mui-focused {
+        box-shadow: var(--focus-ring);
+      }
+    }
+
+    & .MuiOutlinedInput-input {
+      box-sizing: border-box;
+      height: 100%;
+      padding: 0;
+
+      &::placeholder {
+        color: var(--color-placeholder);
+        opacity: 1;
+      }
+
+      /* Browser autofill paints the field light blue; keep the white field and the text colour. */
+      &:-webkit-autofill,
+      &:-webkit-autofill:hover,
+      &:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
+        -webkit-text-fill-color: var(--color-text);
+        caret-color: var(--color-text);
+        transition: background-color 9999s ease-out 0s;
+      }
+    }
+
+    & .MuiOutlinedInput-notchedOutline {
+      border-width: 1px;
+    }
+
+    & .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+      border-width: 1px;
+    }
+
+    & .MuiInputAdornment-positionStart {
+      margin-right: 12px;
+    }
+
+    & .MuiInputAdornment-root .MuiSvgIcon-root {
+      font-size: var(--icon-md);
+      color: var(--color-adornment);
+    }
+
+    & .MuiInputAdornment-root .MuiIconButton-root .MuiSvgIcon-root {
+      font-size: var(--icon-nav);
+    }
+
+    & .MuiFormHelperText-root {
+      margin: 8px 0 0;
+      font-size: calc(var(--type-caption) * var(--fs, 1));
+    }
+  }
+
+  /* .field-lg for a multi-line input: grows with its rows instead of the fixed height. */
+  .field-lg--multiline .MuiOutlinedInput-root {
+    height: auto;
+    align-items: flex-start;
+    padding-block: 12px;
+  }
+
+  /* Vertical rhythm between form rows (prototype .field margin 18px). */
+  .form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* Body text on the signed-out cards. */
+  .form-text {
+    font-size: calc(var(--type-body) * var(--fs, 1));
+  }
+
+  /* Buttons (prototype .btn): one look on every page. Add the class to an MUI <Button>.
+       .btn-primary-lg   variant="contained"  main action, 48px (Sign In, Upload & Submit)
+       .btn-secondary-lg variant="outlined"   standard action, 38px (Browse Files, Resend, View All)
+       .btn-sm           variant="outlined"   compact action, 32px (row actions)
+     Contained = blue fill, darker on hover. Outlined = white with a blue border, fills blue on hover. */
+  .btn-primary-lg.MuiButton-root,
+  .btn-secondary-lg.MuiButton-root,
+  .btn-sm.MuiButton-root {
+    gap: 8px;
+    border-radius: var(--btn-radius);
+    font-weight: var(--weight-semibold);
+    white-space: nowrap;
+    box-shadow: none;
+    transition:
+      background-color var(--duration-fast),
+      color var(--duration-fast),
+      border-color var(--duration-fast);
+
+    & .MuiButton-startIcon,
+    & .MuiButton-endIcon {
+      margin: 0;
+    }
+
+    & .MuiButton-startIcon > :first-child,
+    & .MuiButton-endIcon > :first-child {
+      font-size: var(--icon-btn);
+    }
+
+    &.MuiButton-outlined {
+      border: 1px solid var(--color-primary);
+      color: var(--color-primary);
+      background-color: var(--color-surface);
+
+      &:hover {
+        color: #fff;
+        background-color: var(--color-primary);
+      }
+
+      &.Mui-disabled {
+        border-color: var(--color-border-input);
+        color: var(--color-placeholder);
+        background-color: var(--color-surface);
+      }
+    }
+
+    &.MuiButton-contained {
+      color: #fff;
+      background-color: var(--color-primary);
+
+      &:hover {
+        background-color: var(--color-primary-dark);
+        box-shadow: none;
+      }
+
+      &.Mui-disabled {
+        color: #fff;
+        background-color: var(--color-primary-disabled);
+      }
+    }
+  }
+
+  .btn-primary-lg.MuiButton-root {
+    min-height: var(--btn-lg-height);
+    padding: 0 28px;
+    font-size: calc(var(--btn-lg-text) * var(--fs, 1));
+  }
+
+  .btn-secondary-lg.MuiButton-root {
+    min-height: var(--btn-md-height);
+    padding: 0 16px;
+    font-size: calc(var(--btn-md-text) * var(--fs, 1));
+  }
+
+  .btn-sm.MuiButton-root {
+    min-height: var(--btn-sm-height);
+    padding: 0 12px;
+    font-size: calc(var(--btn-sm-text) * var(--fs, 1));
+  }
+
+  .card {
+    container-type: inline-size;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-6);
+
+    @container (width < 30rem) {
+      padding: var(--space-4);
+    }
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 2.75rem;
+    padding-inline: var(--space-5);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      box-shadow var(--duration-fast) var(--ease-out);
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn--primary {
+    color: #fff;
+    background: var(--color-primary);
+    box-shadow: var(--shadow-button);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-dark);
+    }
+  }
+
+  .btn--outline {
+    color: var(--color-primary);
+    background: var(--color-surface);
+    border-color: var(--color-primary);
+
+    &:hover:not(:disabled) {
+      background: var(--color-primary-soft);
+    }
+  }
+
+  .field {
+    width: 100%;
+    min-height: 3rem;
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1.5px solid var(--color-border-input);
+    border-radius: var(--radius-md);
+    transition: box-shadow var(--duration-fast) var(--ease-out);
+
+    &::placeholder {
+      color: var(--color-placeholder);
+    }
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
+    }
+
+    &[aria-invalid='true'] {
+      border-color: var(--color-danger);
+    }
+  }
+
+  .chip {
+    --chip-fg: var(--color-text-subtle);
+    --chip-bg: var(--color-neutral-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    color: var(--chip-fg);
+    background: var(--chip-bg);
+
+    &[data-tone='progress'] { --chip-fg: var(--color-info); --chip-bg: var(--color-info-soft); }
+    &[data-tone='quality'] { --chip-fg: var(--color-quality); --chip-bg: var(--color-quality-soft); }
+    &[data-tone='done'] { --chip-fg: var(--color-success); --chip-bg: var(--color-success-soft); }
+    &[data-tone='warning'] { --chip-fg: var(--color-warning); --chip-bg: var(--color-warning-soft); }
+    &[data-tone='closed'] { --chip-fg: var(--color-danger); --chip-bg: var(--color-danger-soft); }
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+
+    & th,
+    & td {
+      padding: var(--space-3) var(--space-4);
+      text-align: start;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+
+    & th {
+      font-weight: var(--weight-medium);
+      color: var(--color-text-subtle);
+      background: var(--color-surface-muted);
+    }
+
+    & tbody tr:hover {
+      background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+    }
+  }
+
+  /* ---- Signed-out screens: layout, brand panel, auth card, login, policy page -------------------------- */
+
+  /* Signed-out screens: PublicLayout, AuthCard, FieldLabel, PasswordRules (shared), LoginPage and PlaceholderPage (pages).
+     Sizes follow the prototype sign-in page (req/MRRM-prototype, "Login"): px tokens from styles.css. */
+  /* ---------------------------------------------------------- public layout */
+  /* Split layout for every signed-out screen: brand panel left (desktop, 1.25fr), white form column right (1fr). */
+  .public-layout {
+    --fs: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100vh;
+    color: var(--color-text);
+    background-color: var(--color-bg-auth);
+
+    @media (width >= 1200px) {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    }
+  }
+
+  /* Form column above the brand panel. */
+  .public-layout__column {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px 16px 24px;
+
+    @media (width >= 600px) {
+      padding: 24px 32px 32px;
+    }
+
+    @media (width >= 1200px) {
+      padding: 40px;
+    }
+  }
+
+  .public-layout__mobile-logo {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 24px;
+
+    @media (width >= 600px) {
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    @media (width >= 1200px) {
+      display: none;
+    }
+  }
+
+  .public-layout__main {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  /* Prototype .login-card: width min(460px, 100%). Short cards are centred vertically; `below` hangs under the card. */
+  .public-layout__card {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+  }
+
+  .public-layout__below {
+    top: 100%;
+    inset-inline: 0;
+    margin-top: 20px;
+    text-align: center;
+
+    @media (width >= 1200px) {
+      position: absolute;
+    }
+  }
+
+  /* Long forms (register): the page is held to the window and only the card's form scrolls (see .auth-card--scrolls). */
+  .public-layout--scrolls {
+    @media (width >= 1200px) {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Room for the footer under the full-height card. */
+    & .public-layout__column {
+      @media (width >= 1200px) {
+        padding-bottom: 64px;
+      }
+    }
+
+    & .public-layout__card {
+      flex-direction: column;
+      justify-content: center;
+
+      @media (width >= 1200px) {
+        display: flex;
+        height: 100%;
+      }
+    }
+  }
+
+  /* ------------------------------------------------------------ brand panel */
+  /* Prototype .login-hero: desktop only. */
+  .brand-panel {
+    position: relative;
+    z-index: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 64px 72px 40px;
+
+    @media (width >= 1200px) {
+      display: flex;
+    }
+
+    /* Hero logo (full .brand-logo sizes): 48px divider, 1px tag tracking. */
+    & .brand-logo__divider {
+      align-self: center;
+      height: 48px;
+    }
+
+    & .brand-logo__sub {
+      letter-spacing: 1px;
+    }
+  }
+
+  .brand-panel__bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse at 85% 70%, #cfe3fb 0%, rgb(207 227 251 / 0) 55%),
+      linear-gradient(160deg, #f5f9ff 0%, #e8f1fd 100%);
+  }
+
+  /* The prototype hero has no extra glow shapes. */
+  .brand-panel__glow,
+  .brand-panel__wash {
+    display: none;
+  }
+
+  .brand-panel__heading,
+  .brand-panel__lead,
+  .brand-panel__features {
+    position: relative;
+    z-index: 1;
+  }
+
+  .brand-panel__heading {
+    margin: 56px 0 18px;
+    font-family: var(--font-heading);
+    font-weight: var(--weight-heavy);
+    font-size: var(--type-hero);
+    line-height: 1.08;
+    letter-spacing: -1px;
+    color: var(--color-ink);
+  }
+
+  .brand-panel__accent {
+    color: var(--color-primary);
+  }
+
+  .brand-panel__lead {
+    max-width: 470px;
+    margin-bottom: 26px;
+    font-size: var(--type-lead);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+
+  .brand-panel__features {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* One feature row (prototype .feat): 48px tinted circle with a 22px icon, then title and text. data-tone picks the colours. */
+  .brand-feature {
+    --feature-color: var(--color-primary);
+    --feature-bg: #dbe8fd;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    &[data-tone='extract'] {
+      --feature-color: #0f9f8a;
+      --feature-bg: #cdf3ea;
+    }
+
+    &[data-tone='summarize'] {
+      --feature-color: var(--color-quality);
+      --feature-bg: #ece3fd;
+    }
+  }
+
+  .brand-feature__icon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--feature-bg);
+
+    & .MuiSvgIcon-root {
+      font-size: 22px;
+      color: var(--feature-color);
+    }
+  }
+
+  .brand-feature__title {
+    font-size: var(--type-lead);
+    font-weight: var(--weight-bold);
+    line-height: 1.25;
+    color: var(--color-ink);
+  }
+
+  .brand-feature__text {
+    font-size: var(--type-body);
+    line-height: 1.3;
+    color: var(--color-text-muted);
+  }
+
+  /* Prototype .hero-card (250px wide, right 60px, top 46%, rotated) and pills: the SVG is scaled so its card is 300px tall
+     and placed against the panel's right edge so the pills stay inside the panel. Hidden where it would cover the text. */
+  .brand-panel__illustration {
+    position: absolute;
+    right: 0;
+    top: calc(46% - 157px);
+    display: none;
+
+    @media (width >= 1440px) {
+      display: block;
+    }
+  }
+
+  .brand-panel__footer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: auto;
+    padding-top: 30px;
+  }
+
+  .brand-panel__tagline {
+    font-size: var(--type-caption);
+    line-height: 1.4;
+    color: var(--color-text-muted);
+  }
+
+  .brand-panel__divider {
+    align-self: stretch;
+    border-left: 1px solid var(--color-border-input);
+  }
+
+  .brand-panel__record {
+    width: 375px;
+  }
+
+  /* Prototype .ls-logo: 20px tall (592 x 67 image). */
+  .brand-panel__levelshift {
+    width: 177px;
+  }
+
+  /* ----------------------------------------------------------------- footer */
+  .public-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 20px;
+    margin-top: 32px;
+    font-size: var(--type-caption);
+
+    @media (width >= 1200px) {
+      position: absolute;
+      inset-inline: 0;
+      bottom: 24px;
+    }
+  }
+
+  .public-footer__nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 20px;
+  }
+
+  .public-footer__text {
+    font-size: inherit;
+    font-weight: var(--weight-regular);
+    color: var(--color-text-muted);
+  }
+
+  /* -------------------------------------------------------------- auth card */
+  /* Card used by every signed-out screen (prototype .login-card). */
+  .auth-card {
+    --auth-card-border: #eef1f7;
+    padding: 32px 20px;
+    border: 1px solid var(--auth-card-border);
+    border-radius: 20px;
+    background-color: var(--color-surface);
+    box-shadow: 0 20px 60px rgb(13 27 76 / 0.08);
+
+    @media (width >= 600px) {
+      padding: 44px 40px;
+    }
+
+    /* Notices match the form's text size. */
+    & .MuiAlert-root {
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+    }
+
+    & .MuiAlert-message {
+      font-size: var(--type-body);
+      line-height: 1.5;
+    }
+
+    & .MuiAlert-icon {
+      font-size: var(--icon-nav);
+    }
+  }
+
+  .auth-card__title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: var(--weight-heavy);
+    font-size: var(--type-title);
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: var(--color-ink);
+    text-align: center;
+
+    @media (width >= 600px) {
+      font-size: var(--type-auth-title);
+    }
+  }
+
+  /* Title without a subtitle: the subtitle's space under the heading moves to the title. */
+  .auth-card__title--alone {
+    margin-bottom: 30px;
+  }
+
+  .auth-card__subtitle {
+    margin: 8px 0 30px;
+    font-size: var(--type-lead);
+    line-height: 1.4;
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  /* Long form (register): on desktop the heading stays fixed and only the form scrolls inside the card. */
+  .auth-card--scrolls {
+    flex-direction: column;
+    min-height: 0;
+
+    @media (width >= 1200px) {
+      display: flex;
+      max-height: 100%;
+      padding-bottom: 32px;
+    }
+  }
+
+  /* Scrollbar sits in the card's side padding; the inset keeps focus rings from being clipped. */
+  .auth-card__scroll {
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-input) transparent;
+
+    @media (width >= 1200px) {
+      flex: 1;
+      overflow-y: auto;
+      margin-inline: -24px;
+      padding: 4px 24px;
+    }
+  }
+
+  /* ------------------------------------------------------------ field label */
+  /* Label shown above a .field-lg input (prototype .field label: 14px/600 ink, 8px gap). */
+  .field-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: var(--type-body);
+    font-weight: var(--weight-semibold);
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+
+  /* --------------------------------------------------------- password rules */
+  /* REG-09 checklist under a new-password field: icon + text per rule, not colour alone (SEC-07). */
+  .password-rules {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .password-rules__rule {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-block: 2px;
+  }
+
+  .password-rules__icon.MuiSvgIcon-root {
+    font-size: var(--icon-sm);
+  }
+
+  .password-rules__text {
+    font-size: var(--type-caption);
+    line-height: 1.4;
+  }
+
+  .password-rules__note {
+    padding-top: 4px;
+  }
+  /* ---- Register, password reset, email verification, admin registrations, brand logos ------------------ */
+
+  /* Strong link on the signed-out cards ("Back to sign in"); add .form-text for the card's text size. */
+  .form-link {
+    font-weight: var(--weight-semibold);
+  }
+
+  .form-link--center {
+    text-align: center;
+  }
+
+  /* Space between a password field and its rules checklist (register, reset password). */
+  .password-rules-gap {
+    margin-top: 10px;
+  }
+
+  /* ResendVerification: notice above an outlined resend button. */
+  .resend {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .resend-alert {
+    align-self: stretch;
+  }
+
+  /* RequireAuth: full-screen spinner while the session loads. */
+  .require-auth-loading {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+  }
+
+  /* MrrmMark: size with a CSS width (or the width attribute); the height follows the viewBox. */
+  .brand-mark {
+    display: block;
+    flex-shrink: 0;
+    height: auto;
+  }
+
+  /* MrrmLogo: mark, wordmark and the two-line product name (prototype .brand). The hero sizes are set on .brand-panel. */
+  .brand-logo {
+    --brand-mark: 52px;
+    --brand-word: 40px;
+    --brand-gap: 8px;
+    --brand-divider: 14px;
+    --brand-sub: var(--type-body);
+    --brand-sub-line: 1.35;
+
+    display: flex;
+    align-items: center;
+  }
+
+  /* Prototype app-header brand: 34px mark, 24px name, 12px tag. */
+  .brand-logo--compact {
+    --brand-mark: 34px;
+    --brand-word: 24px;
+    --brand-gap: 8px;
+    --brand-divider: 14px;
+    --brand-sub: var(--type-xs);
+    --brand-sub-line: 1.35;
+  }
+
+  .brand-logo__mark {
+    width: var(--brand-mark);
+  }
+
+  .brand-logo__word {
+    margin-left: var(--brand-gap);
+    font-family: var(--font-heading);
+    font-weight: var(--weight-heavy);
+    font-size: var(--brand-word);
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: var(--color-ink);
+  }
+
+  .brand-logo__divider {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    margin-left: var(--brand-divider);
+    padding-left: var(--brand-divider);
+    border-left: 1px solid var(--color-border-input);
+  }
+
+  .brand-logo__sub {
+    font-size: var(--brand-sub);
+    line-height: var(--brand-sub-line);
+    letter-spacing: 0.07em;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  /* LevelShiftLogo: callers set the width with a class. */
+  .brand-levelshift {
+    display: block;
+    height: auto;
+  }
+
+  /* RecordIllustration: decorative card on the sign-in hero, with a gentle float.
+     The animations sit on wrapper groups so the CSS transform does not replace their SVG transform attribute. */
+  .record-illus {
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .record-illus-card {
+    animation: record-illus-float 6s ease-in-out infinite;
+  }
+
+  .record-illus-chip {
+    animation: record-illus-chip 5s ease-in-out infinite;
+  }
+
+  .record-illus-chip--2 {
+    animation-delay: -1.7s;
+  }
+
+  .record-illus-chip--3 {
+    animation-delay: -3.4s;
+  }
+
+  .record-illus-arc {
+    animation: record-illus-dots 3s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .record-illus-card,
+    .record-illus-chip,
+    .record-illus-arc {
+      animation: none;
+    }
+  }
+
+  @keyframes record-illus-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes record-illus-chip {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+
+    50% {
+      transform: translate(4px, -8px);
+    }
+  }
+
+  @keyframes record-illus-dots {
+    to {
+      stroke-dashoffset: -40;
+    }
+  }
+  /* ---- Signed-in shell, page header, request table, dashboard, coming soon ----------------------------- */
+  /* Sizes follow the MRRM prototype (req/MRRM-prototype/assets/styles.css: App shell, Cards, Tables, Badges). */
+
+  /* ======================================================= signed-in shell */
+  /* Shell root. */
+  .shell {
+    min-height: 100vh;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+  }
+
+  /* ---- Header bar */
+  .shell-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--header-height);
+    padding-inline: 12px;
+    background: linear-gradient(90deg, #eef5fe, #f7fbff);
+    border-bottom: 1px solid var(--color-border);
+
+    @media (width >= 640px) {
+      padding-inline: 28px;
+    }
+  }
+
+  /* Header icon buttons (menu, help): 36px circle, 22px icon. */
+  .shell-menu-btn,
+  .shell-help-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: var(--color-icon);
+
+    & .MuiSvgIcon-root {
+      font-size: 22px;
+    }
+
+    &:hover {
+      color: var(--color-primary);
+      background-color: var(--color-primary-soft);
+    }
+  }
+
+  .shell-menu-btn {
+    @media (width >= 1200px) {
+      display: none;
+    }
+  }
+
+  .shell-home {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  .shell-home__mark {
+    flex-shrink: 0;
+    width: 34px;
+    height: 38px;
+  }
+
+  .shell-home__word {
+    margin-left: 8px;
+    font-weight: var(--weight-heavy);
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    color: var(--color-navy);
+  }
+
+  /* Tagline with the 32px divider on its left. */
+  .shell-home__sub {
+    display: none;
+    margin-left: 14px;
+    padding-left: 14px;
+    border-left: 1px solid var(--color-border-input);
+    font-size: var(--type-xs);
+    line-height: 1.35;
+    color: var(--color-text-muted);
+
+    @media (width >= 1024px) {
+      display: block;
+    }
+  }
+
+  .shell-spacer {
+    flex: 1;
+  }
+
+  /* Help to account: 22px in all (10px header gap on each side + 2px). */
+  .shell-gap {
+    width: 2px;
+  }
+
+  /* ---- Help and account menus */
+  .shell-user-btn {
+    gap: 10px;
+    padding: 4px;
+    border-radius: 24px;
+    font-size: var(--type-lead);
+    color: var(--color-text);
+  }
+
+  .shell-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: var(--type-body);
+    font-weight: var(--weight-semibold);
+    color: #fff;
+    background-color: var(--color-indigo);
+  }
+
+  .shell-user-name {
+    display: none;
+    font-size: var(--type-lead);
+    color: var(--color-text);
+
+    @media (width >= 640px) {
+      display: inline;
+    }
+  }
+
+  .shell-user-caret {
+    display: none;
+    font-size: var(--icon-sm);
+    color: var(--color-text);
+
+    @media (width >= 640px) {
+      display: block;
+    }
+  }
+
+  /* Header dropdowns and the table row menu (prototype .dropdown / .row-menu). Set on <Menu className>. */
+  .shell-menu,
+  .dash-menu {
+    & .MuiMenu-paper {
+      min-width: 200px;
+      margin-top: 8px;
+      padding: 6px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-pop);
+    }
+
+    & .MuiMenu-list {
+      padding: 0;
+    }
+
+    & .MuiMenuItem-root {
+      gap: 10px;
+      min-height: 0;
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-size: var(--type-body);
+      color: var(--color-text);
+
+      &:hover {
+        color: var(--color-primary);
+        background-color: var(--color-primary-soft);
+      }
+    }
+
+    & .MuiListItemIcon-root {
+      min-width: 0;
+      color: inherit;
+
+      & .MuiSvgIcon-root {
+        font-size: var(--icon-sm);
+      }
+    }
+
+    & .MuiDivider-root {
+      margin: 6px 0;
+      border-color: var(--color-border);
+    }
+  }
+
+  .dash-menu .MuiMenu-paper {
+    min-width: 180px;
+    margin-top: 0;
+  }
+
+  .shell-menu .shell-menu__danger,
+  .dash-menu .dash-menu-danger {
+    color: var(--color-danger);
+  }
+
+  .shell-user-card {
+    max-width: 280px;
+    padding: 9px 12px;
+    font-size: var(--type-body);
+  }
+
+  .shell-user-card__name {
+    font-size: var(--type-body);
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink);
+  }
+
+  .shell-user-card .MuiTypography-body2 {
+    font-size: var(--type-caption);
+    color: var(--color-text-muted);
+  }
+
+  /* ---- Body: sidebar (drawer below 1200px) and page */
+  .shell-body {
+    display: flex;
+  }
+
+  .shell-aside {
+    display: none;
+    position: sticky;
+    top: var(--header-height);
+    flex-shrink: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--header-height));
+    overflow-y: auto;
+    background: var(--color-bg-grad);
+    border-right: 1px solid var(--color-border);
+
+    @media (width >= 1200px) {
+      display: block;
+    }
+  }
+
+  .shell-drawer {
+    @media (width >= 1200px) {
+      display: none;
+    }
+  }
+
+  .shell-drawer__content {
+    width: var(--sidebar-width);
+    height: 100%;
+    background: var(--color-bg-grad);
+  }
+
+  .shell-main {
+    flex: 1;
+    min-width: 0;
+    padding: 26px 16px 40px;
+
+    @media (width >= 1024px) {
+      padding-inline: 32px;
+    }
+  }
+
+  /* ---- Sidebar navigation */
+  .shell-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding-block: 20px 24px;
+  }
+
+  .shell-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 16px;
+  }
+
+  .shell-nav__item {
+    position: relative;
+    justify-content: flex-start;
+    gap: 14px;
+    height: 46px;
+    padding: 0 16px 0 32px;
+    border-radius: 0 10px 10px 0;
+    font-size: var(--type-nav);
+    font-weight: var(--weight-medium);
+    white-space: nowrap;
+    color: var(--color-navy-700);
+
+    & .MuiSvgIcon-root {
+      flex-shrink: 0;
+      font-size: var(--icon-nav);
+      color: var(--color-icon);
+    }
+
+    &:hover {
+      color: var(--color-primary);
+      background-color: color-mix(in srgb, var(--color-primary) 6%, transparent);
+      text-decoration: none;
+
+      & .MuiSvgIcon-root {
+        color: var(--color-primary);
+      }
+    }
+
+    /* NavLink marks the current route with .active */
+    &.active {
+      font-weight: var(--weight-semibold);
+      color: var(--color-primary);
+      background-color: var(--color-primary-soft);
+
+      & .MuiSvgIcon-root {
+        color: var(--color-primary);
+      }
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        left: 0;
+        width: 4px;
+        border-radius: 0 4px 4px 0;
+        background-color: var(--color-primary);
+      }
+    }
+
+    &.Mui-focusVisible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
+  }
+
+  .shell-sidebar__foot {
+    margin-top: auto;
+    padding: 24px 32px 0;
+  }
+
+  .shell-sidebar__tagline {
+    margin-bottom: 12px;
+    font-size: var(--type-caption);
+    line-height: 1.4;
+    color: var(--color-text-muted);
+  }
+
+  .shell-sidebar__logo {
+    display: block;
+    width: auto;
+    height: 20px;
+    max-width: 100%;
+  }
+
+  /* ---- Page title and subtitle (PageHeader) */
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-header__title {
+    font-size: calc(var(--type-title) * var(--fs, 1));
+    font-weight: var(--weight-heavy);
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+    color: var(--color-ink);
+  }
+
+  .page-header__subtitle {
+    margin-top: 6px;
+    font-size: calc(var(--type-lead) * var(--fs, 1));
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  /* ===================================================== request table card */
+  /* Status badge; colour from data-tone (progress, quality, done, pending, warning, closed). */
+  .status-chip {
+    --chip-fg: var(--color-text-muted);
+    --chip-bg: var(--color-neutral-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+    font-weight: var(--weight-medium);
+    line-height: 1.25;
+    white-space: nowrap;
+    color: var(--chip-fg);
+    background-color: var(--chip-bg);
+
+    &[data-tone='progress'] { --chip-fg: var(--color-info); --chip-bg: var(--color-info-soft); }
+    &[data-tone='quality'] { --chip-fg: var(--color-quality); --chip-bg: var(--color-quality-soft); }
+    &[data-tone='done'] { --chip-fg: var(--color-success); --chip-bg: var(--color-success-soft); }
+    &[data-tone='warning'] { --chip-fg: var(--color-warning); --chip-bg: var(--color-warning-soft); }
+    &[data-tone='closed'] { --chip-fg: var(--color-danger); --chip-bg: var(--color-danger-soft); }
+
+    & .MuiSvgIcon-root {
+      font-size: 15px;
+    }
+  }
+
+  .status-chip__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+  }
+
+  /* Panel (prototype .card.panel). */
+  .rt-card {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+
+    @media (width >= 640px) {
+      padding: 20px 22px;
+    }
+  }
+
+  /* ---- Title, search and "view all" row */
+  .rt-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .rt-head__text {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+
+  .rt-title {
+    font-size: calc(var(--type-heading) * var(--fs, 1));
+    font-weight: var(--weight-bold);
+    line-height: 1.25;
+    letter-spacing: normal;
+    color: var(--color-ink);
+  }
+
+  .rt-description {
+    margin-top: 4px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    line-height: 1.4;
+    color: var(--color-text-muted);
+  }
+
+  .rt-tools {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+
+    @media (width >= 900px) {
+      flex: 0 1 auto;
+    }
+  }
+
+  /* Search (prototype .search): 38px tall, 260px wide, 17px icon. */
+  .rt-search {
+    width: 100%;
+
+    @media (width >= 600px) {
+      width: 260px;
+    }
+
+    & .MuiOutlinedInput-root {
+      height: var(--btn-md-height);
+      padding-left: 12px;
+      border-radius: var(--radius-sm);
+      font-size: calc(var(--type-body) * var(--fs, 1));
+      color: var(--color-text);
+      transition: box-shadow var(--duration-fast);
+
+      &.Mui-focused {
+        box-shadow: var(--focus-ring);
+      }
+    }
+
+    & .MuiOutlinedInput-input {
+      padding: 0 12px 0 0;
+
+      &::placeholder {
+        color: var(--color-text-muted);
+        opacity: 1;
+      }
+    }
+
+    & .MuiInputAdornment-positionStart {
+      margin-right: 9px;
+    }
+
+    & .MuiInputAdornment-root .MuiSvgIcon-root {
+      font-size: var(--icon-btn);
+      color: var(--color-text-muted);
+    }
+  }
+
+  .rt-view-all.MuiButton-root {
+    flex-shrink: 0;
+  }
+
+  /* ---- Table */
+  .rt-container {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .rt-table {
+    min-width: 860px;
+
+    & .MuiTableCell-root {
+      padding: 11px 16px;
+      line-height: 1.4;
+      white-space: nowrap;
+      border-color: var(--color-border);
+    }
+
+    & .MuiTableCell-head {
+      font-size: calc(var(--type-caption) * var(--fs, 1));
+      font-weight: var(--weight-medium);
+      line-height: 1.25;
+      color: var(--color-text-muted);
+      background-color: var(--color-surface-muted);
+    }
+
+    & .MuiTableCell-body {
+      font-size: calc(var(--type-body) * var(--fs, 1));
+      color: var(--color-text);
+    }
+
+    & .MuiTableRow-hover:hover {
+      background-color: var(--color-row-hover);
+    }
+
+    & .MuiTableRow-root:last-of-type .MuiTableCell-body {
+      border-bottom: 0;
+    }
+  }
+
+  .rt-sort {
+    gap: 4px;
+    border-radius: 4px;
+    font: inherit;
+    color: inherit;
+
+    &:hover {
+      color: var(--color-primary);
+    }
+  }
+
+  .rt-sort__arrow {
+    font-size: 13px;
+    opacity: 0.7;
+
+    .rt-sort--active & {
+      color: var(--color-primary);
+      opacity: 1;
+    }
+  }
+
+  /* Empty-state row. */
+  .rt-table .rt-empty {
+    padding: 28px;
+    text-align: center;
+    white-space: normal;
+    color: var(--color-placeholder);
+  }
+}
+
+/* ============================================================= pages */
+@layer pages {
+  /* ---- Signed-out screens: layout, brand panel, auth card, login, policy page -------------------------- */
+
+  /* ------------------------------------------------------------- login page */
+  .login__register {
+    font-size: var(--type-body);
+    color: var(--color-text-muted);
+  }
+
+  .login__link-strong {
+    font-weight: var(--weight-semibold);
+  }
+
+  .login__notice {
+    margin-bottom: 18px;
+  }
+
+  .login__otp-intro {
+    margin-bottom: 24px;
+    font-size: var(--type-body);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  .login__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+  }
+
+  /* Remember me / Forgot password (prototype .login-card .row: margin 4px 0 26px; .form-stack adds 18px). */
+  .login__row--options {
+    margin: 4px 0 8px;
+
+    & .login__link-strong {
+      font-weight: var(--weight-regular);
+    }
+  }
+
+  .login__remember {
+    margin: 0;
+
+    & .MuiFormControlLabel-label {
+      font-size: var(--type-body);
+      color: var(--color-text);
+    }
+  }
+
+  /* The checkbox icon's box is 18px inside its 24px glyph (prototype .check input: 18px, 10px gap). */
+  .login__remember-box {
+    margin: 0 7px 0 -3px;
+    padding: 0;
+
+    & .MuiSvgIcon-root {
+      font-size: 24px;
+    }
+  }
+
+  /* One-time code: spaced digits, centred. */
+  .login__code .MuiOutlinedInput-input {
+    letter-spacing: 0.4em;
+    text-align: center;
+  }
+
+  /* Code-step actions (with .form-text): text links styled like Forgot password? */
+  .login__text-action {
+    font-weight: var(--weight-semibold);
+    line-height: 1.3;
+
+    &:disabled {
+      color: var(--mui-palette-text-disabled);
+      cursor: default;
+      text-decoration: none;
+    }
+  }
+
+  /* ------------------------------------------------------- placeholder page */
+  /* Policy/support pages: the Paper also has .auth-card, so it is the same card as the sign-in screens. */
+  .placeholder-page {
+    text-align: center;
+
+    & .MuiLink-root {
+      font-size: var(--type-body);
+      font-weight: var(--weight-semibold);
+    }
+  }
+
+  .placeholder-page__title {
+    margin-bottom: 8px;
+    font-weight: var(--weight-heavy);
+    font-size: var(--type-title);
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: var(--color-ink);
+  }
+
+  .placeholder-page__text {
+    margin-bottom: 24px;
+    font-size: var(--type-body);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+  /* ---- Register, password reset, email verification, admin registrations, brand logos ------------------ */
+
+  /* RegisterPage: two-line subtitle. */
+  .register-subtitle {
+    line-height: 1.45;
+  }
+
+  /* RegisterPage: section headings (Organization, Primary contact, Password). */
+  .register-section {
+    font-size: var(--type-lead);
+    font-weight: var(--weight-bold);
+    line-height: 1.3;
+    color: var(--color-ink);
+  }
+
+  .register-section--spaced {
+    padding-top: 6px;
+  }
+
+  /* RegisterPage: "Organization type" label, styled like FieldLabel; keeps MUI's focus/error colours. */
+  .register-label {
+    margin-bottom: 4px;
+    font-size: var(--type-body);
+    font-weight: var(--weight-semibold);
+    line-height: 1.3;
+    color: var(--color-ink);
+
+    &.Mui-focused {
+      color: var(--color-primary);
+    }
+
+    &.Mui-disabled {
+      color: var(--mui-palette-text-disabled);
+    }
+
+    &.Mui-error {
+      color: var(--mui-palette-error-main);
+    }
+  }
+
+  /* RegisterPage: Client / Agency radio row. */
+  .register-choices {
+    column-gap: 16px;
+
+    & .MuiFormControlLabel-label {
+      font-size: var(--type-body);
+      color: var(--color-text);
+
+      &.Mui-disabled {
+        color: var(--mui-palette-text-disabled);
+      }
+    }
+
+    & .MuiSvgIcon-root {
+      font-size: 22px;
+    }
+  }
+
+  /* RegisterPage: error text under the radio row and the terms checkbox. */
+  .register-helper {
+    margin-inline: 0;
+    font-size: var(--type-caption);
+  }
+
+  /* RegisterPage: privacy/terms checkbox, top-aligned with a multi-line label (same 18px box as Remember me). */
+  .register-terms {
+    align-items: flex-start;
+    margin: 0;
+  }
+
+  .register-terms__box {
+    margin: 0 7px 0 -3px;
+    padding: 0;
+
+    & .MuiSvgIcon-root {
+      font-size: 24px;
+    }
+  }
+
+  .register-terms__label {
+    padding-top: 2px;
+    font-size: var(--type-body);
+    line-height: 1.45;
+    color: var(--color-text);
+  }
+
+  .register-signin {
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  /* VerifyEmailPage: spinner beside "Please wait…". The spinner reads its size from the custom property. */
+  .verify-status {
+    --verify-spinner-size: 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  /* Admin RegistrationsPage: approval queue and the review dialog. */
+  .admin-reg {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .admin-reg-title {
+    font-weight: var(--weight-heavy);
+    font-size: var(--type-title);
+    line-height: 1.2;
+    color: var(--color-ink);
+  }
+
+  .admin-reg-empty {
+    padding: 32px;
+    border-color: var(--color-border);
+    border-radius: var(--radius-lg);
+    font-size: var(--type-body);
+    color: var(--color-text-muted);
+    text-align: center;
+  }
+
+  .admin-reg-org {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .admin-reg-duplicate {
+    align-self: flex-start;
+  }
+
+  .admin-reg-review {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .admin-reg-details {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 16px;
+    margin: 0;
+  }
+
+  .admin-reg-details__row {
+    display: contents;
+  }
+
+  .admin-reg-details__value {
+    margin: 0;
+    font-size: var(--type-body);
+    color: var(--color-text);
+    white-space: pre-line;
+  }
+
+  /* Pushes the first dialog action (Reject…, Back) to the left. */
+  .admin-reg-push {
+    margin-right: auto;
+  }
+  /* ---- Signed-in shell, page header, request table, dashboard, coming soon ----------------------------- */
+
+  /* =============================================================== dashboard */
+  /* ---- Stat tiles (prototype .kpi; DSH-02: a tile filters Recent Requests) */
+  .dash-tiles {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    margin-bottom: 18px;
+
+    @media (width >= 640px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media (width > 1280px) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* Per-tile colours: --tile-bg (gradient), --tile-icon-bg, --tile-color (icon, ring), --tile-label, --tile-chart. */
+  .dash-tile {
+    --tile-bg: linear-gradient(135deg, #f1f7ff, #e7f0fd);
+    --tile-icon-bg: var(--color-primary-100);
+    --tile-color: var(--color-primary);
+    --tile-label: var(--color-primary);
+    --tile-chart: var(--color-primary);
+    --tile-ring: var(--color-primary-100);
+    position: relative;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 14px;
+    width: 100%;
+    padding: 18px;
+    overflow: hidden;
+    text-align: left;
+    background: var(--tile-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition:
+      transform var(--duration-fast),
+      box-shadow var(--duration-fast),
+      border-color var(--duration-fast);
+
+    &[data-tile='inProgress'] {
+      --tile-bg: linear-gradient(135deg, #f5f6ff, #eceffd);
+      --tile-icon-bg: #e1e5fc;
+      --tile-label: var(--color-ink);
+      --tile-chart: #6f7cf0;
+      --tile-ring: #e1e5fc;
+    }
+
+    &[data-tile='completed'] {
+      --tile-bg: linear-gradient(135deg, #f1fbf6, #e5f6ee);
+      --tile-icon-bg: var(--color-success-100);
+      --tile-color: var(--color-success);
+      --tile-label: var(--color-ink);
+      --tile-chart: var(--color-success);
+      --tile-ring: var(--color-success-100);
+    }
+
+    &[data-tile='pending'] {
+      --tile-bg: linear-gradient(135deg, #fff8f1, #fff0e2);
+      --tile-icon-bg: #ffd9b5;
+      --tile-color: var(--color-warning);
+      --tile-label: var(--color-warning);
+      --tile-chart: var(--color-warning);
+      --tile-ring: #ffd9b5;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgb(13 27 76 / 0.08);
+    }
+
+    &.dash-tile--selected {
+      border-color: var(--tile-chart);
+      box-shadow: 0 0 0 3px var(--tile-ring);
+    }
+
+    &.Mui-focusVisible {
+      outline: 2px solid var(--tile-chart);
+      outline-offset: 2px;
+    }
+  }
+
+  .dash-tile__icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--tile-color);
+    background-color: var(--tile-icon-bg);
+
+    & svg {
+      font-size: var(--icon-nav);
+    }
+  }
+
+  .dash-tile__text {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .dash-tile__label {
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-semibold);
+    line-height: 1.4;
+    color: var(--tile-label);
+  }
+
+  .dash-tile__value {
+    margin-block: 2px;
+    font-size: calc(var(--type-kpi) * var(--fs, 1));
+    font-weight: var(--weight-heavy);
+    line-height: 1.2;
+    color: var(--color-ink);
+  }
+
+  .dash-tile__caption {
+    font-size: calc(var(--type-xs) * var(--fs, 1));
+    line-height: 1.4;
+    white-space: nowrap;
+    color: var(--color-text-muted);
+  }
+
+  /* ---- Request tables */
+  .dash-tables {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .dash-filter-chip {
+    margin-bottom: 14px;
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+  }
+
+  .dash-id {
+    font: inherit;
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink);
+  }
+
+  /* Completed Deliverables: "New" marker until the first download. */
+  .dash-id-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .dash-new {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    font-size: var(--type-xs);
+    font-weight: var(--weight-semibold);
+    line-height: 18px;
+  }
+
+  .dash-new::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Services wrap like the prototype's td.wrap, at most two lines; 120-160px so the table fits at 1440px. */
+  .dash-service {
+    display: -webkit-box;
+    min-width: 120px;
+    max-width: 160px;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .dash-output {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text);
+
+    & .MuiSvgIcon-root {
+      font-size: var(--icon-sm);
+      color: var(--color-primary);
+    }
+  }
+
+  .dash-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dash-action.MuiButton-root {
+    min-width: 132px;
+  }
+
+  /* Kebab (prototype .kebab): 30px, 16px icon. */
+  .dash-row-menu {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border-radius: 6px;
+    color: var(--color-text-muted);
+
+    & .MuiSvgIcon-root {
+      font-size: var(--icon-sm);
+    }
+
+    &:hover {
+      color: var(--color-primary);
+      background-color: var(--color-primary-soft);
+    }
+  }
+
+  .dash-link-strong {
+    font-weight: var(--weight-semibold);
+  }
+
+  /* Prototype .pager-row text. */
+  .dash-table-footer {
+    margin-top: 16px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  /* ======================================================== coming soon */
+  .soon-card {
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+
+    @media (width >= 640px) {
+      padding: 20px 22px;
+    }
+  }
+
+  .soon-text {
+    margin-bottom: 16px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  .soon-link {
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-semibold);
+  }
+  /* ---- Upload & Configure ------------------------------------------------------------------------------ */
+
+  /* ------------------------------------------------------------- upload page */
+  /* Card holding the form (and the confirmation once submitted). Prototype: .card.panel, padding 28. */
+  .upload-card.MuiPaper-root {
+    padding: 28px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+
+    @media (width < 600px) {
+      padding: 20px;
+    }
+  }
+
+  .upload-alert--top {
+    margin-bottom: 16px;
+  }
+
+  /* Processing service ------------------------------------------------- */
+  /* Prototype .field label: 14/600 ink, 8px above the control. */
+  .upload-label.MuiTypography-root {
+    display: block;
+    margin-bottom: 8px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
+    color: var(--color-ink);
+  }
+
+  .upload-label__required {
+    color: var(--color-danger);
+  }
+
+  .upload-placeholder {
+    color: var(--color-placeholder);
+  }
+
+  /* Prototype custom .select-btn: 46px, padding 0 16, radius 8, 16px text, 18px chevron. */
+  .upload-service.MuiOutlinedInput-root {
+    height: var(--field-height);
+    border-radius: var(--field-radius);
+    font-size: calc(var(--type-input) * var(--fs, 1));
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    transition: box-shadow var(--duration-fast);
+
+    & .MuiSelect-select {
+      box-sizing: border-box;
+      height: 100%;
+      min-height: 0;
+      padding: 0 44px 0 16px;
+      line-height: var(--field-height);
+    }
+
+    & .MuiSelect-icon {
+      right: 14px;
+      font-size: var(--icon-md);
+      color: var(--color-text);
+      transition: transform var(--duration-fast);
+    }
+
+    & .MuiOutlinedInput-notchedOutline {
+      border-width: 1px;
+      border-color: var(--color-border-input);
+    }
+
+    &:hover:not(.Mui-disabled, .Mui-error) .MuiOutlinedInput-notchedOutline {
+      border-color: var(--color-primary);
+    }
+
+    /* Focused, or open (focus moves into the menu while it is open). */
+    &.Mui-focused,
+    &:has(.MuiSelect-select[aria-expanded='true']) {
+      box-shadow: var(--focus-ring);
+
+      & .MuiOutlinedInput-notchedOutline {
+        border-width: 1px;
+        border-color: var(--color-primary);
+      }
+    }
+
+    &.Mui-error .MuiOutlinedInput-notchedOutline {
+      border-color: var(--color-danger);
+    }
+
+    &.Mui-error.Mui-focused {
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 14%, transparent);
+    }
+
+    &.Mui-disabled {
+      color: var(--color-placeholder);
+      background-color: var(--color-neutral-soft);
+
+      & .MuiOutlinedInput-notchedOutline {
+        border-color: var(--color-border-input);
+      }
+
+      & .MuiSelect-icon {
+        color: var(--color-placeholder);
+      }
+    }
+  }
+
+  /* Prototype .select-list: radius 8, pop shadow, padding 6; items 16px, padding 9/12. */
+  .upload-service-menu.MuiPaper-root {
+    max-height: 420px;
+    margin-top: 4px;
+    padding: 6px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--field-radius);
+    box-shadow: var(--shadow-pop);
+
+    & .MuiMenu-list {
+      padding: 0;
+    }
+  }
+
+  .upload-service-option.MuiMenuItem-root {
+    min-height: 0;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: calc(var(--type-input) * var(--fs, 1));
+    line-height: var(--leading-tight);
+    color: var(--color-text);
+    white-space: normal;
+
+    &:hover,
+    &.Mui-focusVisible {
+      background-color: var(--color-primary-soft);
+    }
+
+    &.Mui-selected {
+      font-weight: var(--weight-semibold);
+      color: var(--color-primary);
+      background-color: transparent;
+
+      &:hover,
+      &.Mui-focusVisible {
+        background-color: var(--color-primary-soft);
+      }
+    }
+  }
+
+  .upload-service-help.MuiFormHelperText-root {
+    margin: 8px 0 0;
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+
+    &.Mui-error {
+      color: var(--color-danger);
+    }
+  }
+
+  /* Drop zone ---------------------------------------------------------- */
+  .upload-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 18px;
+    /* 34px plus the 22px that the prototype's (empty) in-zone .file-list always adds above the icon. */
+    padding: 56px 20px 34px;
+    text-align: center;
+    border: 1.5px dashed #6aa0ef;
+    border-radius: var(--radius-md);
+    background-color: #fbfdff;
+    transition:
+      background-color var(--duration-fast),
+      border-color var(--duration-fast);
+  }
+
+  .upload-drop--active {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-soft);
+  }
+
+  .upload-drop__icon.MuiSvgIcon-root {
+    font-size: 52px;
+    color: var(--color-primary);
+  }
+
+  .upload-drop__title.MuiTypography-root {
+    margin: 10px 0 4px;
+    font-size: calc(var(--type-heading) * var(--fs, 1));
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-ink);
+  }
+
+  /* Small grey copy: "or", "Uploading files…", the file count. */
+  .upload-note.MuiTypography-root {
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+    line-height: var(--leading-tight);
+    color: var(--color-text-muted);
+  }
+
+  .upload-drop__or.MuiTypography-root {
+    margin-bottom: 10px;
+  }
+
+  .upload-drop__formats.MuiTypography-root {
+    margin-top: 14px;
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+    line-height: var(--leading-tight);
+    color: var(--color-text-muted);
+  }
+
+  .upload-alert--submit {
+    margin-top: 16px;
+  }
+
+  /* Actions ------------------------------------------------------------ */
+  .upload-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    margin-top: 24px;
+  }
+
+  .upload-submit.MuiButton-root {
+    @media (width < 600px) {
+      width: 100%;
+    }
+  }
+
+  /* File list (prototype .file-list / .file-item) ----------------------- */
+  .upload-files {
+    max-width: 560px;
+    margin: 18px auto 0;
+  }
+
+  .upload-files__count.MuiTypography-root {
+    margin-bottom: 10px;
+  }
+
+  .upload-files__list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* One file row; data-state="uploading|done|error", data-kind="pdf|image". */
+  .upload-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-card);
+
+    &[data-state='error'] {
+      border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-surface));
+      background-color: var(--color-danger-soft);
+    }
+  }
+
+  .upload-file__icon.MuiSvgIcon-root {
+    flex: none;
+    font-size: 30px;
+    color: var(--color-primary);
+
+    [data-kind='pdf'] > & {
+      color: var(--color-danger);
+    }
+  }
+
+  .upload-file__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .upload-file__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .upload-file__name.MuiTypography-root {
+    min-width: 0;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    font-weight: var(--weight-medium);
+    line-height: var(--leading-normal);
+    color: var(--color-ink);
+  }
+
+  /* Percentage and status lines (prototype .state: 13px). */
+  .upload-file__small.MuiTypography-root {
+    font-size: calc(var(--type-caption) * var(--fs, 1));
+    line-height: var(--leading-tight);
+  }
+
+  .upload-file__size.MuiTypography-root {
+    flex: none;
+    font-size: calc(var(--type-xs) * var(--fs, 1));
+    color: var(--color-text-muted);
+  }
+
+  .upload-file__progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .upload-file__bar.MuiLinearProgress-root {
+    flex: 1;
+    height: 6px;
+    border-radius: 6px;
+    background-color: var(--color-border);
+
+    & .MuiLinearProgress-bar {
+      border-radius: 6px;
+      background-color: var(--color-primary);
+    }
+
+    [data-state='done'] & .MuiLinearProgress-bar {
+      background-color: var(--color-success);
+    }
+  }
+
+  .upload-file__percent.MuiTypography-root {
+    min-width: 4ch;
+    text-align: right;
+    color: var(--color-primary);
+  }
+
+  .upload-file__status.MuiTypography-root {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 6px;
+    color: var(--color-success);
+
+    &.upload-file__status--error {
+      color: var(--color-danger);
+    }
+
+    & .MuiSvgIcon-root {
+      font-size: 15px;
+    }
+  }
+
+  .upload-file__remove.MuiIconButton-root {
+    flex: none;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--color-text-muted);
+
+    & .MuiSvgIcon-root {
+      font-size: var(--icon-sm);
+    }
+
+    &:hover {
+      color: var(--color-danger);
+      background-color: var(--color-danger-soft);
+    }
+
+    &.Mui-disabled {
+      color: var(--color-placeholder);
+    }
+  }
+
+  /* Confirmation after submitting -------------------------------------- */
+  .upload-done {
+    padding: 32px 0;
+    text-align: center;
+  }
+
+  .upload-done__icon.MuiSvgIcon-root {
+    font-size: 52px;
+    color: var(--color-success);
+  }
+
+  .upload-done__title.MuiTypography-root {
+    margin-top: 10px;
+    font-size: calc(var(--type-heading) * var(--fs, 1));
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-ink);
+  }
+
+  .upload-done__text.MuiTypography-root {
+    margin-top: 6px;
+    font-size: calc(var(--type-body) * var(--fs, 1));
+    line-height: var(--leading-normal);
+    color: var(--color-text-muted);
+  }
+
+  .upload-done__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+  }
+}
+
+/* ========================================================= utilities */
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .text-heading {
+    font-family: var(--font-heading);
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}

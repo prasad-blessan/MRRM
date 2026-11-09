@@ -1,9 +1,11 @@
-import { Alert, Box, Button, CircularProgress, Link, Stack, TextField, Typography } from '@mui/material'
+import MailOutlineRounded from '@mui/icons-material/MailOutlineRounded'
+import { Alert, Button, CircularProgress, InputAdornment, Link, TextField, Typography } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import { authApi } from '../api/auth'
 import { errorMessage } from '../api/client'
 import { AuthCard } from '../components/AuthCard'
+import { FieldLabel } from '../components/FieldLabel'
 import { ResendVerification } from '../components/ResendVerification'
 import { useUrlToken } from '../hooks/useUrlToken'
 
@@ -30,10 +32,11 @@ export function VerifyEmailPage() {
   if (state.kind === 'verifying') {
     return (
       <AuthCard title="Verifying your email">
-        <Stack direction="row" spacing={2} sx={{ alignItems: 'center' }} role="status">
-          <CircularProgress size={24} aria-hidden />
-          <Typography>Please wait…</Typography>
-        </Stack>
+        <div className="verify-status" role="status">
+          {/* The size comes from CSS (--verify-spinner-size); MUI writes `size` into the element's width/height. */}
+          <CircularProgress size="var(--verify-spinner-size)" aria-hidden />
+          <Typography className="form-text">Please wait…</Typography>
+        </div>
       </AuthCard>
     )
   }
@@ -41,30 +44,30 @@ export function VerifyEmailPage() {
   if (state.kind === 'verified') {
     return (
       <AuthCard title="Email verified">
-        <Stack spacing={2.5}>
+        <div className="form-stack">
           <Alert severity="success">Thank you. Your email address is verified.</Alert>
-          <Typography>
+          <Typography className="form-text">
             Your registration is now with LevelShift for review. We will email you when it is approved, and you can
             then sign in.
           </Typography>
-          <Link component={RouterLink} to="/login">
+          <Link component={RouterLink} to="/login" className="form-text form-link">
             Go to sign in
           </Link>
-        </Stack>
+        </div>
       </AuthCard>
     )
   }
 
   return (
     <AuthCard title="We could not verify your email">
-      <Stack spacing={2.5}>
+      <div className="form-stack">
         <Alert severity="error">{state.message}</Alert>
-        <Typography>Enter the email address you registered with and we will send you a new link.</Typography>
+        <Typography className="form-text">Enter the email address you registered with and we will send you a new link.</Typography>
         <ResendForm />
-        <Link component={RouterLink} to="/login">
+        <Link component={RouterLink} to="/login" className="form-text form-link">
           Back to sign in
         </Link>
-      </Stack>
+      </div>
     </AuthCard>
   )
 }
@@ -78,8 +81,7 @@ function ResendForm() {
 
   const valid = /^\S+@\S+\.\S+$/.test(email.trim())
   return (
-    <Box
-      component="form"
+    <form
       noValidate
       onSubmit={async (e) => {
         e.preventDefault()
@@ -92,26 +94,39 @@ function ResendForm() {
         }
       }}
     >
-      <Stack spacing={2}>
-        <TextField
-          id="email"
-          label="Email address"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value)
-            setError(null)
-          }}
-          error={!!error}
-          helperText={error}
-          required
-          fullWidth
-        />
-        <Button type="submit" variant="contained">
+      <div className="form-stack">
+        <div>
+          <FieldLabel htmlFor="email">Email address</FieldLabel>
+          <TextField
+            id="email"
+            type="email"
+            placeholder="Enter your email address"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value)
+              setError(null)
+            }}
+            error={!!error}
+            helperText={error}
+            required
+            fullWidth
+            className="field-lg"
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MailOutlineRounded />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </div>
+        <Button type="submit" variant="contained" fullWidth className="btn-primary-lg">
           Send a new link
         </Button>
-      </Stack>
-    </Box>
+      </div>
+    </form>
   )
 }

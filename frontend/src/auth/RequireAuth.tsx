@@ -1,4 +1,4 @@
-import { Alert, Box, CircularProgress } from '@mui/material'
+import { Alert, CircularProgress } from '@mui/material'
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import type { UserRole } from '../api/auth'
@@ -11,9 +11,9 @@ export function RequireAuth({ children, roles }: { children: ReactNode; roles?: 
 
   if (status === 'loading') {
     return (
-      <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
+      <div className="require-auth-loading">
         <CircularProgress aria-label="Loading" />
-      </Box>
+      </div>
     )
   }
   if (status === 'anonymous' || !user) {

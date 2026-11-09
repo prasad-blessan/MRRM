@@ -1,10 +1,10 @@
-import Visibility from '@mui/icons-material/Visibility'
-import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import VisibilityOffOutlined from '@mui/icons-material/VisibilityOffOutlined'
+import VisibilityOutlined from '@mui/icons-material/VisibilityOutlined'
 import { IconButton, InputAdornment, TextField, type TextFieldProps } from '@mui/material'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 // Password input with a show/hide toggle that works by keyboard and screen reader.
-export function PasswordField(props: TextFieldProps) {
+export function PasswordField({ startIcon, ...props }: TextFieldProps & { startIcon?: ReactNode }) {
   const [visible, setVisible] = useState(false)
 
   return (
@@ -14,6 +14,7 @@ export function PasswordField(props: TextFieldProps) {
       slotProps={{
         ...props.slotProps,
         input: {
+          startAdornment: startIcon && <InputAdornment position="start">{startIcon}</InputAdornment>,
           endAdornment: (
             <InputAdornment position="end">
               <IconButton
@@ -21,7 +22,7 @@ export function PasswordField(props: TextFieldProps) {
                 onClick={() => setVisible((v) => !v)}
                 edge="end"
               >
-                {visible ? <VisibilityOff /> : <Visibility />}
+                {visible ? <VisibilityOutlined /> : <VisibilityOffOutlined />}
               </IconButton>
             </InputAdornment>
           ),

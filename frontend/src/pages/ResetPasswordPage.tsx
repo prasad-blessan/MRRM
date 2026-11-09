@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Alert, Box, Button, CircularProgress, Link, Stack } from '@mui/material'
+import LockOutlined from '@mui/icons-material/LockOutlined'
+import { Alert, Button, CircularProgress, Link } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link as RouterLink, useNavigate } from 'react-router'
@@ -8,6 +9,7 @@ import { authApi } from '../api/auth'
 import { ApiError, errorMessage } from '../api/client'
 import { meetsPasswordRules } from '../auth/passwordPolicy'
 import { AuthCard } from '../components/AuthCard'
+import { FieldLabel } from '../components/FieldLabel'
 import { PasswordField } from '../components/PasswordField'
 import { PasswordRules } from '../components/PasswordRules'
 import { useUrlToken } from '../hooks/useUrlToken'
@@ -72,15 +74,15 @@ export function ResetPasswordPage() {
   if (linkState === 'invalid') {
     return (
       <AuthCard title="This link cannot be used">
-        <Stack spacing={2.5}>
+        <div className="form-stack">
           <Alert severity="error">This link has expired or has already been used. Please request a new one.</Alert>
-          <Button component={RouterLink} to="/forgot-password" variant="contained">
+          <Button component={RouterLink} to="/forgot-password" variant="contained" fullWidth className="btn-primary-lg">
             Request a new link
           </Button>
-          <Link component={RouterLink} to="/login">
+          <Link component={RouterLink} to="/login" className="form-text form-link form-link--center">
             Back to sign in
           </Link>
-        </Stack>
+        </div>
       </AuthCard>
     )
   }
@@ -90,39 +92,51 @@ export function ResetPasswordPage() {
       title="Choose a new password"
       subtitle="After you change your password you will be signed out of all devices."
     >
-      <Box component="form" noValidate onSubmit={onSubmit}>
-        <Stack spacing={2.5}>
+      <form noValidate onSubmit={onSubmit}>
+        <div className="form-stack">
           {error && <Alert severity="error">{error}</Alert>}
-          <PasswordField
-            {...passwordField}
-            inputRef={passwordRef}
-            id="password"
-            label="New password"
-            autoComplete="new-password"
-            autoFocus
-            required
-            fullWidth
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
-          />
-          <PasswordRules id="password-rules" password={password} />
-          <PasswordField
-            {...confirmField}
-            inputRef={confirmRef}
-            id="confirmPassword"
-            label="Confirm new password"
-            autoComplete="new-password"
-            required
-            fullWidth
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword?.message}
-          />
-          <Button type="submit" variant="contained" size="large" fullWidth disabled={isSubmitting}>
+          <div>
+            <FieldLabel htmlFor="password">New password</FieldLabel>
+            <PasswordField
+              {...passwordField}
+              inputRef={passwordRef}
+              id="password"
+              placeholder="Enter a new password"
+              autoComplete="new-password"
+              autoFocus
+              required
+              fullWidth
+              startIcon={<LockOutlined />}
+              className="field-lg"
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              slotProps={{ htmlInput: { 'aria-describedby': 'password-rules' } }}
+            />
+            <div className="password-rules-gap">
+              <PasswordRules id="password-rules" password={password} />
+            </div>
+          </div>
+          <div>
+            <FieldLabel htmlFor="confirmPassword">Confirm new password</FieldLabel>
+            <PasswordField
+              {...confirmField}
+              inputRef={confirmRef}
+              id="confirmPassword"
+              placeholder="Re-enter the new password"
+              autoComplete="new-password"
+              required
+              fullWidth
+              startIcon={<LockOutlined />}
+              className="field-lg"
+              error={!!errors.confirmPassword}
+              helperText={errors.confirmPassword?.message}
+            />
+          </div>
+          <Button type="submit" variant="contained" size="large" fullWidth disabled={isSubmitting} className="btn-primary-lg">
             {isSubmitting ? 'Saving…' : 'Change password'}
           </Button>
-        </Stack>
-      </Box>
+        </div>
+      </form>
     </AuthCard>
   )
 }

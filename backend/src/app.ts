@@ -6,6 +6,8 @@ import { authRouter } from './auth/routes.js';
 import { loadSession } from './auth/session.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
+import { requestsRouter, serviceTypesRouter, uploadsRouter } from './requests/routes.js';
+import { settingsRouter } from './settings.js';
 
 export function createApp() {
   const app = express();
@@ -22,6 +24,16 @@ export function createApp() {
   });
   app.use('/api/auth', authRouter);
   app.use('/api/admin/registrations', registrationsRouter);
+
+  // Request data may include PHI: never cache it in the browser or a proxy.
+  app.use(['/api/requests', '/api/uploads', '/api/settings'], (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
+  app.use('/api/service-types', serviceTypesRouter);
+  app.use('/api/uploads', uploadsRouter);
+  app.use('/api/requests', requestsRouter);
+  app.use('/api/settings', settingsRouter);
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Not found.' } });

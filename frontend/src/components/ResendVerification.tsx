@@ -1,4 +1,4 @@
-import { Alert, Button, Stack } from '@mui/material'
+import { Alert, Button } from '@mui/material'
 import { useState } from 'react'
 import { authApi } from '../api/auth'
 import { errorMessage } from '../api/client'
@@ -28,11 +28,11 @@ export function ResendVerification({ email }: { email: string }) {
   }
 
   return (
-    <Stack spacing={1.5} sx={{ alignItems: 'flex-start' }}>
-      {message && <Alert severity={message.ok ? 'success' : 'error'} sx={{ alignSelf: 'stretch' }}>{message.text}</Alert>}
-      <Button variant="outlined" onClick={resend} disabled={sending || wait > 0}>
+    <div className="resend">
+      {message && <Alert severity={message.ok ? 'success' : 'error'} className="resend-alert">{message.text}</Alert>}
+      <Button variant="outlined" onClick={resend} disabled={sending || wait > 0} className="btn-secondary-lg">
         {wait > 0 ? `Resend verification email in ${wait}s` : sending ? 'Sending…' : 'Resend verification email'}
       </Button>
-    </Stack>
+    </div>
   )
 }

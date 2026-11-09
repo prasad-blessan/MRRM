@@ -56,38 +56,43 @@ model Organization {
   createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
   users           User[]
+  requests        Request[]
 
   @@index([status])
   @@map("organizations")
 }
 
 model User {
-  id               String            @id @default(uuid()) @db.Uuid
+  id                 String            @id @default(uuid()) @db.Uuid
   // Null for LevelShift staff (LS_ADMIN, LS_USER).
-  organizationId   String?           @map("organization_id") @db.Uuid
-  organization     Organization?     @relation(fields: [organizationId], references: [id])
+  organizationId     String?           @map("organization_id") @db.Uuid
+  organization       Organization?     @relation(fields: [organizationId], references: [id])
   // Always stored lower-case (REG-07: emails are unique case-insensitively).
-  email            String            @unique
-  fullName         String            @map("full_name")
-  phone            String?
-  emailVerifiedAt  DateTime?         @map("email_verified_at") @db.Timestamptz(3)
+  email              String            @unique
+  fullName           String            @map("full_name")
+  phone              String?
+  emailVerifiedAt    DateTime?         @map("email_verified_at") @db.Timestamptz(3)
   // CMP-12: accepted privacy notice / terms version.
-  termsVersion     String?           @map("terms_version")
-  termsAcceptedAt  DateTime?         @map("terms_accepted_at") @db.Timestamptz(3)
-  passwordHash     String?           @map("password_hash")
-  role             UserRole
-  status           UserStatus        @default(INVITED)
+  termsVersion       String?           @map("terms_version")
+  termsAcceptedAt    DateTime?         @map("terms_accepted_at") @db.Timestamptz(3)
+  passwordHash       String?           @map("password_hash")
+  role               UserRole
+  status             UserStatus        @default(INVITED)
   // REG-06 / REG-10: consecutive password + OTP failures.
-  failedLoginCount Int               @default(0) @map("failed_login_count")
-  lockedUntil      DateTime?         @map("locked_until") @db.Timestamptz(3)
-  lastLoginAt      DateTime?         @map("last_login_at") @db.Timestamptz(3)
-  timezone         String?
-  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
-  sessions         Session[]
-  loginChallenges  LoginChallenge[]
-  emailTokens      EmailToken[]
-  passwordHistory  PasswordHistory[]
+  failedLoginCount   Int               @default(0) @map("failed_login_count")
+  lockedUntil        DateTime?         @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt        DateTime?         @map("last_login_at") @db.Timestamptz(3)
+  timezone           String?
+  // Settings: status-change emails (NOT-01); emails never carry PHI (NOT-02).
+  emailNotifications Boolean           @default(true) @map("email_notifications")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  sessions           Session[]
+  loginChallenges    LoginChallenge[]
+  emailTokens        EmailToken[]
+  passwordHistory    PasswordHistory[]
+  requests           Request[]
+  uploads            RequestDocument[]
 
   @@index([organizationId])
   @@map("users")
@@ -168,4 +173,97 @@ model AuditLog {
   @@index([event])
   @@index([actorUserId])
   @@map("audit_logs")
+}
+
+// PRD 7.2 request lifecycle.
+enum RequestStatus {
+  RECEIVED
+  ALLOCATED
+  IN_PROCESSING
+  SUMMARIZATION
+  QC_VERIFICATION
+  DELIVERED
+  COMPLETED
+  ON_HOLD
+  REWORK
+  REJECTED
+  CANCELLED
+}
+
+// ADM: service catalogue; SLA drives the expected completion date.
+model ServiceType {
+  id        String    @id @default(uuid()) @db.Uuid
+  code      String    @unique
+  name      String
+  slaHours  Int       @map("sla_hours")
+  sortOrder Int       @default(0) @map("sort_order")
+  active    Boolean   @default(true)
+  requests  Request[]
+
+  @@map("service_types")
+}
+
+// One submission (MR-xxxx) holding one or more documents.
+model Request {
+  id             String            @id @default(uuid()) @db.Uuid
+  // Shown as MR-(1000 + number).
+  number         Int               @unique @default(autoincrement())
+  code           String            @unique
+  organizationId String            @map("organization_id") @db.Uuid
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  submittedById  String            @map("submitted_by_id") @db.Uuid
+  submittedBy    User              @relation(fields: [submittedById], references: [id])
+  serviceTypeId  String            @map("service_type_id") @db.Uuid
+  serviceType    ServiceType       @relation(fields: [serviceTypeId], references: [id])
+  status         RequestStatus     @default(RECEIVED)
+  // Workflow Monitor stage: 0 Allocation .. 4 Final Output, 5 = all done.
+  stage          Int               @default(0)
+  // Progress (0-100) of the current workflow stage.
+  stageProgress  Int               @default(0) @map("stage_progress")
+  receivedAt     DateTime          @default(now()) @map("received_at") @db.Timestamptz(3)
+  expectedAt     DateTime          @map("expected_at") @db.Timestamptz(3)
+  deliveredAt    DateTime?         @map("delivered_at") @db.Timestamptz(3)
+  completedAt    DateTime?         @map("completed_at") @db.Timestamptz(3)
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  documents      RequestDocument[]
+  events         StatusEvent[]
+
+  @@index([organizationId, receivedAt])
+  @@index([status])
+  @@map("requests")
+}
+
+// A staged upload (requestId null) or a document of a submitted request.
+model RequestDocument {
+  id           String    @id @default(uuid()) @db.Uuid
+  requestId    String?   @map("request_id") @db.Uuid
+  request      Request?  @relation(fields: [requestId], references: [id])
+  uploadedById String    @map("uploaded_by_id") @db.Uuid
+  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+  fileName     String    @map("file_name")
+  mimeType     String    @map("mime_type")
+  sizeBytes    Int       @map("size_bytes")
+  pages        Int
+  storageKey   String    @unique @map("storage_key")
+  // Synthetic processed output (index + summary entries linked to source pages).
+  output       Json?
+  outputAt     DateTime? @map("output_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([requestId])
+  @@index([uploadedById, requestId])
+  @@map("request_documents")
+}
+
+// TRK-01: timestamped status history.
+model StatusEvent {
+  id          BigInt        @id @default(autoincrement())
+  requestId   String        @map("request_id") @db.Uuid
+  request     Request       @relation(fields: [requestId], references: [id])
+  status      RequestStatus
+  occurredAt  DateTime      @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorUserId String?       @map("actor_user_id") @db.Uuid
+
+  @@index([requestId, occurredAt])
+  @@map("status_events")
 }
